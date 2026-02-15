@@ -83,47 +83,99 @@ body::before {
   position: relative;
   border-bottom: 1px dashed var(--ink-muted);
   cursor: help;
-  white-space: nowrap;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.term-tooltip:focus-visible {
+  border-bottom-color: var(--accent);
+  background: var(--accent-bg);
+  border-radius: 2px;
 }
 
 .term-tooltip .tt-content {
   visibility: hidden;
   opacity: 0;
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
   background: var(--ink);
   color: var(--paper);
-  padding: 10px 14px;
-  border-radius: 4px;
-  font-size: 12.5px;
-  line-height: 1.55;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
   width: max-content;
-  max-width: 280px;
+  max-width: min(300px, 85vw);
   white-space: normal;
   z-index: 100;
   pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  transition: opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              visibility 0.2s;
   font-weight: 400;
   letter-spacing: 0;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+  word-break: keep-all;
 }
 
+/* Arrow */
 .term-tooltip .tt-content::after {
   content: "";
   position: absolute;
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  border: 5px solid transparent;
+  border: 6px solid transparent;
   border-top-color: var(--ink);
 }
 
+/* Desktop hover */
 .term-tooltip:hover .tt-content {
   visibility: visible;
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* Active state (mobile tap + keyboard) */
+.term-tooltip.tt-open .tt-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+/* Prevent left/right overflow */
+@media (max-width: 640px) {
+  .term-tooltip .tt-content {
+    left: auto;
+    right: auto;
+    transform: translateY(4px);
+    position: fixed;
+    bottom: auto;
+    top: auto;
+    margin-top: 8px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-width: none;
+  }
+
+  .term-tooltip .tt-content::after {
+    display: none;
+  }
+
+  .term-tooltip:hover .tt-content,
+  .term-tooltip.tt-open .tt-content {
+    transform: translateY(0);
+    position: fixed;
+    bottom: 80px;
+    left: 16px;
+    right: 16px;
+    top: auto;
+  }
 }
 
 /* Checkbox */

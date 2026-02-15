@@ -75,10 +75,32 @@ const NO_TAX_STATES = [
    ================================================================ */
 
 function T({ children, tip }: { children: ReactNode; tip: string }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <span className="term-tooltip">
+    <span
+      className={`term-tooltip${open ? " tt-open" : ""}`}
+      tabIndex={0}
+      role="button"
+      aria-label={`${typeof children === "string" ? children : "용어"} 설명 보기`}
+      onClick={(e) => {
+        e.stopPropagation();
+        setOpen((v) => !v);
+      }}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setOpen((v) => !v);
+        }
+        if (e.key === "Escape") setOpen(false);
+      }}
+    >
       {children}
-      <span className="tt-content">{tip}</span>
+      <span className="tt-content" role="tooltip">{tip}</span>
     </span>
   );
 }
@@ -471,28 +493,47 @@ export default function TaxGuide() {
           <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
             <div className="flex items-baseline gap-3 mb-1">
               <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>Case 1</span>
-              <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>NRA + 소득 없음</span>
+              <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>
+                <T tip="Non-Resident Alien — 미국 세법상 비거주 외국인. J-1 연구자는 처음 2 calendar year 동안 NRA입니다.">NRA</T> + 소득 없음
+              </span>
             </div>
             <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
-              <Code>Form 8843</Code>만 제출 (SSN/ITIN 없어도 가능)
+              <T tip="미국에 체류한 모든 NRA가 제출하는 정보 보고 양식. 소득이 없어도 필수입니다.">
+                <Code>Form 8843</Code>
+              </T>
+              만 제출 (<T tip="Social Security Number — 미국 사회보장번호 (9자리).">SSN</T>/<T tip="Individual Taxpayer Identification Number — SSN 대신 사용하는 납세자 번호. Form W-7로 신청합니다.">ITIN</T> 없어도 가능)
             </p>
           </div>
           <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
             <div className="flex items-baseline gap-3 mb-1">
               <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>Case 2</span>
-              <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>NRA + 미국 소득 있음</span>
+              <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>
+                <T tip="Non-Resident Alien — 미국 세법상 비거주 외국인.">NRA</T> + 미국 소득 있음
+              </span>
             </div>
             <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
-              <Code>Form 1040-NR</Code> + <Code>Form 8843</Code> 함께 제출
+              <T tip="NRA가 미국 소득을 신고할 때 사용하는 IRS 양식.">
+                <Code>Form 1040-NR</Code>
+              </T>
+              {" "}+{" "}
+              <T tip="NRA 필수 정보 보고 양식. 1040-NR과 함께 제출합니다.">
+                <Code>Form 8843</Code>
+              </T>
+              {" "}함께 제출
             </p>
           </div>
           <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
             <div className="flex items-baseline gap-3 mb-1">
               <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>Case 3</span>
-              <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>RA (거주자 전환)</span>
+              <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>
+                <T tip="Resident Alien — 미국 세법상 거주 외국인. SPT 면제 기간(2년)이 끝나면 RA로 전환됩니다.">RA</T> (거주자 전환)
+              </span>
             </div>
             <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
-              <Code>Form 1040</Code> 제출 (TurboTax 등 사용 가능)
+              <T tip="미국 시민 및 RA가 사용하는 표준 소득세 신고 양식.">
+                <Code>Form 1040</Code>
+              </T>
+              {" "}제출 (<T tip="미국에서 가장 많이 쓰는 세금 신고 소프트웨어. RA만 사용 가능합니다.">TurboTax</T> 등 사용 가능)
             </p>
           </div>
         </div>
@@ -541,7 +582,7 @@ export default function TaxGuide() {
             onBlur={(e) => (e.target.style.borderColor = "var(--rule)")}
           >
             <option value="">선택하세요</option>
-            {Array.from({ length: 12 }, (_, i) => 2015 + i).map((y) => (
+            {Array.from({ length: 12 }, (_, i) => 2026 - i).map((y) => (
               <option key={y} value={String(y)}>
                 {y}년
               </option>
@@ -600,16 +641,22 @@ export default function TaxGuide() {
             </p>
             <ul className="space-y-2.5 text-[14px]" style={{ color: "var(--ink-light)" }}>
               <li>
-                <Code>Form 1040-NR</Code> 사용
+                <T tip="NRA가 미국 소득을 신고할 때 사용하는 IRS 양식. 미국 시민/RA가 사용하는 1040과 다른 별도 양식입니다.">
+                  <Code>Form 1040-NR</Code>
+                </T>{" "}사용
               </li>
               <li>
-                <Code>Form 8843</Code> 필수 제출
+                <T tip="미국에 체류한 모든 NRA가 제출하는 정보 보고 양식. 소득이 없어도 필수이며, 배우자/자녀도 각각 제출합니다.">
+                  <Code>Form 8843</Code>
+                </T>{" "}필수 제출
               </li>
               <li>
-                <T tip="Federal Insurance Contributions Act. 사회보장세(Social Security)와 메디케어세(Medicare)를 합친 명칭입니다.">FICA</T>{" "}
+                <T tip="Federal Insurance Contributions Act. 사회보장세(Social Security 6.2%)와 메디케어세(Medicare 1.45%)를 합친 명칭. NRA J-1은 면제됩니다.">FICA</T>{" "}
                 면제
               </li>
-              <li>Sprintax / GLACIER Tax Prep</li>
+              <li>
+                <T tip="NRA 전용 세금 신고 소프트웨어들. 학교에서 무료 코드를 제공하는 경우가 많습니다.">Sprintax / GLACIER Tax Prep</T>
+              </li>
             </ul>
           </div>
           <div className="p-5" style={{ background: "var(--paper)" }}>
@@ -621,10 +668,16 @@ export default function TaxGuide() {
             </p>
             <ul className="space-y-2.5 text-[14px]" style={{ color: "var(--ink-muted)" }}>
               <li>
-                <Code>Form 1040</Code> 사용
+                <T tip="미국 시민 및 거주 외국인(RA)이 사용하는 표준 소득세 신고 양식. TurboTax 등으로 작성 가능합니다.">
+                  <Code>Form 1040</Code>
+                </T>{" "}사용
               </li>
-              <li>TurboTax, H&R Block 사용 가능</li>
-              <li>FICA 납부 대상</li>
+              <li>
+                <T tip="미국에서 가장 많이 쓰는 세금 신고 소프트웨어들. RA(거주 외국인)만 사용 가능하며, NRA는 사용 불가합니다.">TurboTax, H&R Block</T> 사용 가능
+              </li>
+              <li>
+                <T tip="Federal Insurance Contributions Act. RA는 Social Security(6.2%)와 Medicare(1.45%)를 납부해야 합니다.">FICA</T> 납부 대상
+              </li>
               <li>일반 시민과 동일한 절차</li>
             </ul>
           </div>
@@ -718,19 +771,55 @@ export default function TaxGuide() {
           <Callout type="info" label="나의 상태 (J-1 Researcher 기준)">
             <strong>{arrivalNum}년</strong> 도착 기준:
             <br />
-            &bull; {arrivalNum}~{arrivalNum + 1}년: <strong style={{ color: "var(--accent)" }}>NRA</strong> &rarr; Form 1040-NR + Form 8843
+            &bull; {arrivalNum}~{arrivalNum + 1}년:{" "}
+            <T tip="Non-Resident Alien — 미국 세법상 비거주 외국인. NRA는 미국 내 소득에만 과세되며, 별도의 세금 양식(1040-NR)을 사용합니다.">
+              <strong style={{ color: "var(--accent)" }}>NRA</strong>
+            </T>
+            {" "}&rarr;{" "}
+            <T tip="Form 1040-NR — NRA(비거주 외국인)가 미국 소득을 신고할 때 사용하는 IRS 양식. 미국 시민이 사용하는 1040과 다릅니다.">
+              Form 1040-NR
+            </T>
+            {" "}+{" "}
+            <T tip="Form 8843 — 미국에 체류한 모든 NRA가 의무적으로 제출해야 하는 정보 보고 양식. 소득이 없어도 제출 필수입니다.">
+              Form 8843
+            </T>
             {arrivalNum + 2 <= 2026 && (
               <>
                 <br />
-                &bull; {arrivalNum + 2}년~: <strong>RA로 전환 가능</strong> &rarr; Form 1040
+                &bull; {arrivalNum + 2}년~:{" "}
+                <T tip="Resident Alien — 미국 세법상 거주 외국인. RA가 되면 전 세계 소득에 과세되며, 미국 시민과 동일한 양식(1040)을 사용합니다.">
+                  <strong>RA로 전환 가능</strong>
+                </T>
+                {" "}&rarr;{" "}
+                <T tip="Form 1040 — 미국 시민 및 거주 외국인(RA)이 사용하는 표준 소득세 신고 양식. TurboTax 등 일반 소프트웨어로 작성 가능합니다.">
+                  Form 1040
+                </T>
               </>
             )}
           </Callout>
         )}
 
         <Callout type="tip" label="중요">
-          NRA는 <strong>TurboTax나 H&R Block을 사용할 수 없습니다.</strong> 이 소프트웨어들은 RA 전용입니다.
-          NRA는 반드시 <strong>Sprintax</strong> 또는 <strong>GLACIER Tax Prep</strong>을 사용하세요.
+          <T tip="Non-Resident Alien — 미국 세법상 비거주 외국인. J-1 연구자는 처음 2 calendar year 동안 NRA입니다.">NRA</T>
+          는{" "}
+          <T tip="TurboTax — 미국에서 가장 많이 사용되는 세금 신고 소프트웨어. 미국 시민이나 RA(거주 외국인) 전용이며, NRA는 사용할 수 없습니다.">
+            <strong>TurboTax</strong>
+          </T>
+          나{" "}
+          <T tip="H&R Block — 미국의 대표적인 세금 신고 서비스/소프트웨어. TurboTax와 마찬가지로 RA 전용이며, NRA는 사용 불가합니다.">
+            <strong>H&R Block</strong>
+          </T>
+          을 사용할 수 없습니다. 이 소프트웨어들은{" "}
+          <T tip="Resident Alien — 미국 세법상 거주 외국인. SPT 면제 기간이 끝난 후 RA로 전환됩니다.">RA</T> 전용입니다.
+          NRA는 반드시{" "}
+          <T tip="Sprintax — NRA(비거주 외국인) 전용 온라인 세금 신고 도구. 연방세와 주세 모두 지원하며, 학교에서 무료 코드를 제공하기도 합니다.">
+            <strong>Sprintax</strong>
+          </T>
+          {" "}또는{" "}
+          <T tip="GLACIER Tax Prep — 대학에서 NRA에게 제공하는 연방세 전용 작성 도구. access code가 필요하며, 학교 International Office에서 제공합니다.">
+            <strong>GLACIER Tax Prep</strong>
+          </T>
+          을 사용하세요.
         </Callout>
       </>
     );
