@@ -1,6 +1,34 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
+
+/* ================================================================
+   LOCAL STORAGE HELPERS
+   ================================================================ */
+
+const LS_KEYS = {
+  step: "taxguide:step",
+  checkedDocs: "taxguide:checkedDocs",
+  arrivalYear: "taxguide:arrivalYear",
+  visited: "taxguide:visited",
+} as const;
+
+function loadFromLS<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveToLS(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch { /* quota exceeded — ignore */ }
+}
 
 /* ================================================================
    DATA
@@ -27,10 +55,13 @@ const DOCUMENTS: DocItem[] = [
   { id: "passport", label: "여권 (Passport)", desc: "유효한 여권 원본" },
   { id: "ds2019", label: "DS-2019", desc: "J-1 스폰서 기관 발급 서류" },
   { id: "i94", label: "I-94 출입국 기록", desc: "i94.cbp.dhs.gov 에서 출력" },
-  { id: "ssn", label: "SSN", desc: "Social Security Number (또는 ITIN)" },
+  { id: "entrydates", label: "미국 입국/출국 날짜 (연도별)", desc: "여권 도장 또는 I-94 Travel History 에서 연도별 입출국일 확인" },
+  { id: "ssn", label: "SSN (또는 ITIN)", desc: "Social Security Number. 없으면 ITIN(Form W-7)으로 대체 가능" },
   { id: "w2", label: "W-2", desc: "고용주 발급 (1~2월), 급여 및 원천징수 내역" },
   { id: "1042s", label: "1042-S (해당 시)", desc: "조세조약 적용 소득이 있는 경우" },
   { id: "1099int", label: "1099-INT (해당 시)", desc: "은행 이자 소득이 있는 경우" },
+  { id: "1099div", label: "1099-DIV (해당 시)", desc: "배당금 소득이 있는 경우" },
+  { id: "1099nec", label: "1099-NEC (해당 시)", desc: "독립 계약자(프리랜서) 소득이 있는 경우" },
   { id: "prev", label: "전년도 세금 신고서 사본", desc: "이전에 신고한 적이 있는 경우" },
 ];
 
@@ -143,10 +174,22 @@ function Prose({ children }: { children: ReactNode }) {
    ================================================================ */
 
 export default function TaxGuide() {
-  const [step, setStep] = useState(0);
-  const [checkedDocs, setCheckedDocs] = useState<Set<string>>(new Set());
-  const [arrivalYear, setArrivalYear] = useState("");
-  const [visited, setVisited] = useState<Set<number>>(new Set([0]));
+  const [step, setStep] = useState(() => loadFromLS(LS_KEYS.step, 0));
+  const [checkedDocs, setCheckedDocs] = useState<Set<string>>(
+    () => new Set(loadFromLS<string[]>(LS_KEYS.checkedDocs, [])),
+  );
+  const [arrivalYear, setArrivalYear] = useState(() =>
+    loadFromLS(LS_KEYS.arrivalYear, ""),
+  );
+  const [visited, setVisited] = useState<Set<number>>(
+    () => new Set(loadFromLS<number[]>(LS_KEYS.visited, [0])),
+  );
+
+  /* Persist to localStorage on change */
+  useEffect(() => { saveToLS(LS_KEYS.step, step); }, [step]);
+  useEffect(() => { saveToLS(LS_KEYS.checkedDocs, [...checkedDocs]); }, [checkedDocs]);
+  useEffect(() => { saveToLS(LS_KEYS.arrivalYear, arrivalYear); }, [arrivalYear]);
+  useEffect(() => { saveToLS(LS_KEYS.visited, [...visited]); }, [visited]);
 
   const goTo = (s: number) => {
     setStep(s);
@@ -336,14 +379,21 @@ export default function TaxGuide() {
           </p>
         </Prose>
 
+        <Callout type="info" label="핵심 개념">
+          <strong>&ldquo;세금 신고(Tax Return)&rdquo; &ne; &ldquo;환급(Refund)&rdquo;</strong>
+          <br /><br />
+          세금 신고(Tax Return)는 <strong>지난해 소득을 IRS에 보고하는 절차</strong>이며, 모든 해당자가 의무적으로 해야 합니다.
+          환급(Refund)은 원천징수된 세금 중 초과 납부분을 돌려받는 것으로, 신고 결과에 따라 <strong>환급이 없거나 오히려 추가 납부</strong>할 수도 있습니다.
+        </Callout>
+
         {/* Key numbers */}
         <div
           className="grid grid-cols-3 gap-px my-10 overflow-hidden"
           style={{ background: "var(--rule)", borderRadius: 2 }}
         >
           {[
-            { label: "신고 마감일", value: "4.15", sub: "매년 4월 15일" },
-            { label: "예상 소요", value: "2~3h", sub: "서류 준비~제출" },
+            { label: "신고 대상", value: "2025", sub: "2025 Tax Year 소득" },
+            { label: "기본 마감일", value: "4.15", sub: "2026년 4월 15일 (수)" },
             { label: "비용", value: "$0–35", sub: "도구 사용료" },
           ].map((item) => (
             <div
@@ -362,6 +412,89 @@ export default function TaxGuide() {
               </p>
             </div>
           ))}
+        </div>
+
+        <Callout type="warn" label="2026년에 처음 도착?">
+          <strong>2026년에 미국에 처음 도착한 분은 지금 할 게 없습니다.</strong>
+          <br />
+          2026년에 번 소득은 <strong>2027년 봄</strong>에 신고합니다.
+          지금(2026년 봄)에 신고해야 하는 것은 <strong>2025년 소득</strong>입니다.
+        </Callout>
+
+        <SectionLabel>마감일 정리</SectionLabel>
+        <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+          {[
+            {
+              case_: "급여 소득(W-2)이 있는 경우",
+              date: "2026년 4월 15일",
+              note: "원천징수된 wages가 있으면 4/15 마감",
+            },
+            {
+              case_: "미국 내 소득은 있으나 wages 원천징수가 없는 경우",
+              date: "2026년 6월 15일",
+              note: "자동 2개월 연장 (별도 신청 불필요)",
+            },
+            {
+              case_: "소득 없이 Form 8843만 제출",
+              date: "2026년 6월 15일",
+              note: "8843은 정보 보고 양식이라 6/15 마감",
+            },
+          ].map((item) => (
+            <div
+              key={item.case_}
+              className="flex flex-col gap-1 py-3.5"
+              style={{ borderBottom: "1px solid var(--rule-light)" }}
+            >
+              <p className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>
+                {item.case_}
+              </p>
+              <div className="flex items-center gap-3">
+                <span
+                  className="font-[family-name:var(--font-mono)] text-[13px] font-bold"
+                  style={{ color: "var(--accent)" }}
+                >
+                  {item.date}
+                </span>
+                <span className="text-[12px]" style={{ color: "var(--ink-faint)" }}>
+                  {item.note}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <SectionLabel>3가지 신고 케이스</SectionLabel>
+        <Prose>
+          <p className="mb-4">본인 상황에 따라 제출하는 양식이 다릅니다:</p>
+        </Prose>
+        <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+          <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+            <div className="flex items-baseline gap-3 mb-1">
+              <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>Case 1</span>
+              <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>NRA + 소득 없음</span>
+            </div>
+            <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+              <Code>Form 8843</Code>만 제출 (SSN/ITIN 없어도 가능)
+            </p>
+          </div>
+          <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+            <div className="flex items-baseline gap-3 mb-1">
+              <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>Case 2</span>
+              <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>NRA + 미국 소득 있음</span>
+            </div>
+            <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+              <Code>Form 1040-NR</Code> + <Code>Form 8843</Code> 함께 제출
+            </p>
+          </div>
+          <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+            <div className="flex items-baseline gap-3 mb-1">
+              <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>Case 3</span>
+              <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>RA (거주자 전환)</span>
+            </div>
+            <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+              <Code>Form 1040</Code> 제출 (TurboTax 등 사용 가능)
+            </p>
+          </div>
         </div>
 
         <SectionLabel>이 가이드에서 다루는 내용</SectionLabel>
@@ -383,28 +516,37 @@ export default function TaxGuide() {
           ))}
         </div>
 
-        <SectionLabel>도착 연도 입력</SectionLabel>
+        <SectionLabel>도착 연도 선택</SectionLabel>
         <Prose>
           <p className="mb-3">조세조약 면세 기간 계산에 사용됩니다.</p>
         </Prose>
         <div className="flex items-center gap-4">
-          <input
-            type="number"
-            min={2015}
-            max={2026}
-            placeholder="2024"
+          <select
             value={arrivalYear}
             onChange={(e) => setArrivalYear(e.target.value)}
-            className="w-28 px-3 py-2 text-lg font-[family-name:var(--font-mono)] font-bold outline-none transition-colors"
+            className="px-3 py-2.5 text-[15px] font-[family-name:var(--font-mono)] font-bold outline-none transition-colors cursor-pointer"
             style={{
               background: "var(--paper)",
               border: "1.5px solid var(--rule)",
-              color: "var(--ink)",
+              color: arrivalYear ? "var(--ink)" : "var(--ink-faint)",
               borderRadius: 4,
+              WebkitAppearance: "none",
+              appearance: "none",
+              paddingRight: 32,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23848075' d='M2 4l4 4 4-4'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 10px center",
             }}
             onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
             onBlur={(e) => (e.target.style.borderColor = "var(--rule)")}
-          />
+          >
+            <option value="">선택하세요</option>
+            {Array.from({ length: 12 }, (_, i) => 2015 + i).map((y) => (
+              <option key={y} value={String(y)}>
+                {y}년
+              </option>
+            ))}
+          </select>
           {isValidYear && (
             <span className="text-sm" style={{ color: "var(--moss)" }}>
               {arrivalNum}년 기준으로 안내합니다
@@ -488,19 +630,82 @@ export default function TaxGuide() {
           </div>
         </div>
 
-        <SectionLabel>J-1 Researcher의 거주자 상태</SectionLabel>
+        <SectionLabel>Substantial Presence Test (SPT)</SectionLabel>
         <Prose>
           <p>
-            J-1 비자 소지자는{" "}
-            <T tip="미국에서의 물리적 체류 일수로 세금 거주자 여부를 판단하는 테스트. J-1은 처음 2년간 이 테스트에서 면제됩니다.">
-              Substantial Presence Test
+            IRS는{" "}
+            <T tip="미국에서의 물리적 체류 일수로 세금 거주자 여부를 판단하는 테스트.">
+              Substantial Presence Test (SPT)
             </T>
-            에서 처음 <strong>2 calendar years(햇수 2년)</strong> 동안 면제됩니다. 따라서 대부분의 J-1 Researcher는 처음 2년간{" "}
-            <strong>NRA</strong>입니다.
+            를 통해 세금 목적의 거주자 여부를 판단합니다. 아래 두 조건을 <strong>모두</strong> 충족하면 RA입니다:
           </p>
         </Prose>
+        <div
+          className="my-6 p-5"
+          style={{ background: "var(--paper)", border: "1px solid var(--rule)", borderRadius: 2 }}
+        >
+          <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--ink-muted)" }}>
+            SPT 공식
+          </p>
+          <ol className="space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
+            <li>1. 해당 과세연도에 미국에 <strong>31일 이상</strong> 체류</li>
+            <li className="mt-2">2. 가중치 합산 <strong>183일 이상</strong>:</li>
+          </ol>
+          <div
+            className="mt-3 p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed"
+            style={{ background: "var(--cream)", borderRadius: 2, color: "var(--ink)" }}
+          >
+            해당 연도 체류일 &times; <strong>1</strong>
+            <br />
+            + 전년도 체류일 &times; <strong>1/3</strong>
+            <br />
+            + 전전년도 체류일 &times; <strong>1/6</strong>
+            <br />
+            = <span style={{ color: "var(--accent)" }}>183일 이상이면 RA</span>
+          </div>
+        </div>
 
-        <Callout type="warn" label="주의">
+        <SectionLabel>J 비자 SPT 면제 기간</SectionLabel>
+        <Prose>
+          <p>
+            J 비자 소지자는 SPT에서 일정 기간 면제됩니다. <strong>비자 카테고리에 따라 면제 기간이 다릅니다:</strong>
+          </p>
+        </Prose>
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 gap-px my-6 overflow-hidden"
+          style={{ background: "var(--rule)", borderRadius: 2 }}
+        >
+          <div className="p-5" style={{ background: "var(--paper)" }}>
+            <p
+              className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3"
+              style={{ color: "var(--accent)" }}
+            >
+              J-1 Scholar / Teacher / Trainee
+            </p>
+            <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
+              SPT 면제: <strong>2 Calendar Years</strong> (햇수 2년)
+            </p>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--ink-faint)" }}>
+              Research Scholar, Professor, Short-term Scholar 포함
+            </p>
+          </div>
+          <div className="p-5" style={{ background: "var(--paper)" }}>
+            <p
+              className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3"
+              style={{ color: "var(--ink-muted)" }}
+            >
+              J-1 Student / F-1 Student
+            </p>
+            <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
+              SPT 면제: <strong>5 Calendar Years</strong> (햇수 5년)
+            </p>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--ink-faint)" }}>
+              학생 신분은 더 긴 면제 기간 적용
+            </p>
+          </div>
+        </div>
+
+        <Callout type="warn" label="Calendar Year 주의">
           <T tip="Calendar Year = 달력상의 한 해 (1월 1일~12월 31일). IRS는 해당 연도에 하루라도 미국에 있었으면 1년으로 카운트합니다.">
             Calendar Year
           </T>
@@ -510,10 +715,10 @@ export default function TaxGuide() {
         </Callout>
 
         {isValidYear && (
-          <Callout type="info" label="나의 상태">
+          <Callout type="info" label="나의 상태 (J-1 Researcher 기준)">
             <strong>{arrivalNum}년</strong> 도착 기준:
             <br />
-            &bull; {arrivalNum}~{arrivalNum + 1}년: <strong style={{ color: "var(--accent)" }}>NRA</strong> &rarr; Form 1040-NR
+            &bull; {arrivalNum}~{arrivalNum + 1}년: <strong style={{ color: "var(--accent)" }}>NRA</strong> &rarr; Form 1040-NR + Form 8843
             {arrivalNum + 2 <= 2026 && (
               <>
                 <br />
@@ -663,7 +868,13 @@ export default function TaxGuide() {
           </div>
         </div>
 
-        <Callout type="tip" label="팁">
+        <Callout type="tip" label="참조">
+          조세조약의 공식 내용은{" "}
+          <T tip="IRS Publication 901 — U.S. Tax Treaties. 미국이 체결한 모든 조세조약을 요약한 공식 IRS 문서입니다.">
+            IRS Publication 901 (U.S. Tax Treaties)
+          </T>
+          에서 확인할 수 있습니다. 한국 관련 조항은 Article 21을 참조하세요.
+          <br /><br />
           아직 Form 8233을 제출하지 않았다면 학교/기관의 HR 또는 Payroll 부서에 문의하세요.
           올해분이라도 제출하면 남은 기간의 원천징수를 줄일 수 있습니다.
         </Callout>
@@ -756,6 +967,13 @@ export default function TaxGuide() {
           2월 중순까지 받지 못했다면 HR에 문의하세요.
         </Callout>
 
+        <Callout type="warn" label="SSN이 없는 경우">
+          <T tip="Individual Taxpayer Identification Number — SSN을 받을 수 없는 외국인에게 IRS가 발급하는 납세자 번호입니다.">ITIN</T>
+          으로 대체할 수 있습니다. <Code>Form W-7</Code>을 세금 신고서(1040-NR)와 함께 제출하면 ITIN을 신청할 수 있습니다.
+          <br /><br />
+          단, <strong>Form 8843은 SSN이나 ITIN이 없어도 제출 가능합니다.</strong> SSN/ITIN 란에 &ldquo;NRA — No SSN/ITIN&rdquo;이라고 기재하면 됩니다.
+        </Callout>
+
         <Callout type="tip" label="I-94 출력">
           <ol className="list-decimal ml-4 space-y-1 mt-1">
             <li>
@@ -767,6 +985,7 @@ export default function TaxGuide() {
             <li>&ldquo;Get Most Recent I-94&rdquo; 클릭</li>
             <li>여권 정보 입력 후 조회</li>
             <li>I-94 기록 출력 (PDF 저장 추천)</li>
+            <li><strong>Travel History</strong>도 함께 출력 (연도별 입출국 날짜 확인용)</li>
           </ol>
         </Callout>
       </>
@@ -790,7 +1009,47 @@ export default function TaxGuide() {
           <T tip="Internal Revenue Service — 미국 국세청. 연방 세금을 관할하는 정부 기관입니다.">IRS</T>에 제출하는 Federal Tax
         </p>
 
-        <SectionLabel>01 — Form 8843 (필수)</SectionLabel>
+        <SectionLabel>신고 케이스 확인</SectionLabel>
+        <div
+          className="grid grid-cols-1 gap-px my-4 overflow-hidden"
+          style={{ background: "var(--rule)", borderRadius: 2 }}
+        >
+          <div className="p-5" style={{ background: "var(--accent-bg)" }}>
+            <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--accent)" }}>
+              Case 1 — NRA + 소득 없음
+            </p>
+            <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
+              <Code>Form 8843</Code>만 제출. SSN/ITIN 없어도 제출 가능합니다.
+            </p>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--ink-muted)" }}>
+              마감: 2026년 6월 15일
+            </p>
+          </div>
+          <div className="p-5" style={{ background: "var(--paper)" }}>
+            <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--accent)" }}>
+              Case 2 — NRA + 미국 소득 있음
+            </p>
+            <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
+              <Code>Form 1040-NR</Code> + <Code>Form 8843</Code> 함께 제출.
+            </p>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--ink-muted)" }}>
+              마감: wages 원천징수 있으면 4/15, 없으면 6/15
+            </p>
+          </div>
+          <div className="p-5" style={{ background: "var(--paper)" }}>
+            <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--ink-muted)" }}>
+              Case 3 — RA (거주자)
+            </p>
+            <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
+              <Code>Form 1040</Code> 제출. TurboTax, H&R Block 등 사용 가능.
+            </p>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--ink-muted)" }}>
+              마감: 2026년 4월 15일
+            </p>
+          </div>
+        </div>
+
+        <SectionLabel>01 — Form 8843 (모든 NRA 필수)</SectionLabel>
         <Prose>
           <p>
             미국에 체류한 모든{" "}
@@ -801,9 +1060,10 @@ export default function TaxGuide() {
         <ul className="mt-3 space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
           {[
             "소득 유무와 관계없이 모든 NRA 필수 제출",
-            "배우자(J-2)와 부양가족도 각각 별도로 제출",
+            "배우자(J-2)와 부양가족도 각각 1장씩 별도 제출",
             "인적 사항, 비자 정보, 체류 기간 등을 기록",
             "소득이 전혀 없다면 이 양식만 제출하면 됨",
+            "SSN이나 ITIN이 없어도 제출 가능 (해당 란에 \"NRA — No SSN\" 기재)",
           ].map((item, i) => (
             <li key={i} className="flex items-baseline gap-3">
               <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
@@ -812,7 +1072,7 @@ export default function TaxGuide() {
           ))}
         </ul>
 
-        <SectionLabel>02 — Form 1040-NR (소득이 있는 경우)</SectionLabel>
+        <SectionLabel>02 — Form 1040-NR (NRA + 소득 있는 경우)</SectionLabel>
         <Prose>
           <p>
             미국 내 소득이 있는 NRA가 제출하는{" "}
@@ -835,6 +1095,12 @@ export default function TaxGuide() {
             <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
             <T tip="1042-S: 조세조약에 의해 면제된 소득 또는 외국인에게 지급된 소득 내역을 보여주는 서류입니다.">1042-S</T>가 있다면 함께 참조하여 작성
           </li>
+          <li className="flex items-baseline gap-3">
+            <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+            SSN이 없는 경우 <Code>Form W-7</Code>으로{" "}
+            <T tip="Individual Taxpayer Identification Number — SSN을 받을 수 없는 외국인에게 IRS가 발급하는 납세자 번호입니다.">ITIN</T>
+            을 함께 신청 (1040-NR에 동봉)
+          </li>
         </ul>
 
         <Callout type="warn" label="주의">
@@ -855,6 +1121,7 @@ export default function TaxGuide() {
               <li>&bull; 학교에서 무료 코드 제공 가능</li>
               <li>&bull; 주세 별도 비용 ~$25-35</li>
               <li>&bull; 작성 후 출력, 우편 발송</li>
+              <li>&bull; 연방세 e-file 가능 (추가 비용)</li>
             </ul>
           </div>
           <div className="p-5" style={{ background: "var(--paper)" }}>
@@ -881,9 +1148,11 @@ export default function TaxGuide() {
             "여권 정보 (이름, 번호, 만료일)",
             "DS-2019 정보 (프로그램 번호, 스폰서 기관)",
             "I-94 기록 (입국일, 출국일)",
-            "SSN (Social Security Number)",
+            "미국 입국/출국 날짜 — 연도별 정리 필요",
+            "SSN (Social Security Number) 또는 ITIN",
             "W-2 (급여 소득, 원천징수 금액)",
             "1042-S (조세조약 적용 소득, 해당 시)",
+            "1099-INT / 1099-DIV / 1099-NEC (해당 시)",
           ].map((item, i) => (
             <li key={i} className="flex items-baseline gap-3">
               <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
@@ -896,6 +1165,7 @@ export default function TaxGuide() {
           Sprintax를 통해 연방세를{" "}
           <T tip="Electronic Filing — 세금 서류를 온라인으로 전자 제출하는 것. 우편보다 훨씬 빠르고 안전합니다.">e-file</T>
           할 수도 있습니다. 가능하다면 우편보다 빠르고 안전합니다.
+          단, 추가 비용이 발생할 수 있습니다.
         </Callout>
       </>
     );
@@ -948,6 +1218,15 @@ export default function TaxGuide() {
           위 주에 거주하면서 다른 주에서 일하지 않았다면 주세 신고 불필요
         </p>
 
+        <SectionLabel>주세 신고 필요 여부 빠른 체크</SectionLabel>
+        <Callout type="tip" label="W-2 확인법">
+          W-2의 <strong>Box 15 (State)</strong>, <strong>Box 16 (State wages)</strong>, <strong>Box 17 (State income tax)</strong>를 확인하세요.
+          <br /><br />
+          &bull; Box 17에 금액이 있다면 &rarr; 주 소득세가 원천징수된 것이므로, <strong>주세 신고를 해야 환급</strong>받을 수 있습니다.
+          <br />
+          &bull; Box 17이 0이고 소득세 없는 주라면 &rarr; 주세 신고 불필요.
+        </Callout>
+
         <SectionLabel>소득세가 있는 주</SectionLabel>
         <ul className="space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
           {[
@@ -995,15 +1274,6 @@ export default function TaxGuide() {
           </T>
           를 부과합니다. 거주 도시의 세금 규정을 확인하세요.
         </Callout>
-
-        <Callout type="tip" label="팁">
-          W-2에서 State/Local 세금이{" "}
-          <T tip="원천징수(Withholding): 고용주가 급여에서 세금을 미리 떼는 것. W-2의 State/Local 항목에서 확인 가능합니다.">
-            원천징수
-          </T>
-          된 내역을 확인할 수 있습니다.
-          원천징수가 되어 있다면 반드시 해당 주/지방에 세금 신고를 해서 환급받으세요.
-        </Callout>
       </>
     );
   }
@@ -1025,7 +1295,56 @@ export default function TaxGuide() {
           작성한 세금 서류, 어디로 어떻게 보내나
         </p>
 
-        <SectionLabel>제출할 곳</SectionLabel>
+        <SectionLabel>IRS 우편 주소 (연방세)</SectionLabel>
+        <div
+          className="grid grid-cols-1 gap-px my-4 overflow-hidden"
+          style={{ background: "var(--rule)", borderRadius: 2 }}
+        >
+          <div className="p-5" style={{ background: "var(--paper)" }}>
+            <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--moss)" }}>
+              납부할 세금이 없는 경우 (환급 또는 $0)
+            </p>
+            <p className="font-[family-name:var(--font-mono)] text-[14px] leading-relaxed" style={{ color: "var(--ink)" }}>
+              Department of the Treasury
+              <br />
+              Internal Revenue Service
+              <br />
+              Austin, TX 73301-0215
+            </p>
+          </div>
+          <div className="p-5" style={{ background: "var(--paper)" }}>
+            <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--accent)" }}>
+              납부할 세금이 있는 경우 (체크 동봉)
+            </p>
+            <p className="font-[family-name:var(--font-mono)] text-[14px] leading-relaxed" style={{ color: "var(--ink)" }}>
+              Internal Revenue Service
+              <br />
+              P.O. Box 1303
+              <br />
+              Charlotte, NC 28201-1303
+            </p>
+          </div>
+          <div className="p-5" style={{ background: "var(--paper)" }}>
+            <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--ink-muted)" }}>
+              Form 8843만 제출하는 경우
+            </p>
+            <p className="font-[family-name:var(--font-mono)] text-[14px] leading-relaxed" style={{ color: "var(--ink)" }}>
+              Department of the Treasury
+              <br />
+              Internal Revenue Service
+              <br />
+              Austin, TX 73301-0215
+            </p>
+          </div>
+        </div>
+
+        <Callout type="warn" label="USPS만 사용!">
+          위 주소는 모두 <strong>P.O. Box</strong>입니다.
+          <strong> UPS, FedEx, DHL 등 사설 택배로는 배달이 불가능합니다.</strong>
+          반드시 <strong>USPS (미국 우체국)</strong>를 이용하세요.
+        </Callout>
+
+        <SectionLabel>제출할 곳 요약</SectionLabel>
         <div
           className="grid grid-cols-1 sm:grid-cols-2 gap-px my-4 overflow-hidden"
           style={{ background: "var(--rule)", borderRadius: 2 }}
@@ -1038,7 +1357,7 @@ export default function TaxGuide() {
               <li><Code>1040-NR</Code> + <Code>8843</Code></li>
               <li>W-2 원본 첨부</li>
               <li>1042-S 원본 첨부 (해당 시)</li>
-              <li>주소: Sprintax 가이드에 기재됨</li>
+              <li>위 IRS 주소로 발송</li>
             </ul>
           </div>
           <div className="p-5" style={{ background: "var(--paper)" }}>
@@ -1054,7 +1373,7 @@ export default function TaxGuide() {
           </div>
         </div>
 
-        <Callout type="warn" label="주의">
+        <Callout type="info" label="별도 봉투">
           연방세는 IRS로, 주세는 주 세무서로, <strong>별도의 봉투</strong>에 넣어 각각 다른 주소로 보내야 합니다.
         </Callout>
 
@@ -1064,21 +1383,21 @@ export default function TaxGuide() {
             {
               tag: "추천",
               tagColor: "var(--moss)",
-              name: "Priority Mail",
+              name: "USPS Priority Mail",
               price: "~$8-10",
-              desc: "2~3일 도착, 추적 가능, IRS 대량 우편에도 안전",
+              desc: "2~3일 도착, 추적 가능, USPS 전용 — IRS P.O. Box에 확실히 배달",
             },
             {
               tag: "보통",
               tagColor: "var(--ink-muted)",
-              name: "Certified Mail + First Class",
+              name: "USPS Certified Mail + First Class",
               price: "~$5-7",
-              desc: "추적 가능, 5~7일 도착. IRS 대량 배달 시 스캔 누락 가능성 있음",
+              desc: "추적 가능, 5~7일 도착. 접수 증명 필요시 사용",
             },
             {
               tag: "비추",
               tagColor: "var(--accent)",
-              name: "First Class Mail",
+              name: "USPS First Class Mail",
               price: "~$1-2",
               desc: "추적 불가, 분실 위험. 세금 서류에는 비추천",
             },
@@ -1114,8 +1433,9 @@ export default function TaxGuide() {
             "W-2, 1042-S 등 필요 서류 동봉 확인",
             "연방세와 주세를 별도 봉투에 준비",
             "봉투에 반송 주소(Return Address) 기재",
-            "모든 서류의 사본 보관",
+            "모든 서류의 사본 보관 (스캔 추천)",
             "우편 영수증(추적번호) 보관",
+            "USPS로만 발송 (UPS/FedEx 불가!)",
           ].map((item, i) => (
             <div key={i} className="flex gap-3 items-baseline text-[14px]">
               <span className="font-[family-name:var(--font-mono)] text-[11px] font-bold" style={{ color: "var(--ink-faint)" }}>
@@ -1132,6 +1452,7 @@ export default function TaxGuide() {
             e-file
           </T>
           이 가능한 경우, 우편보다 훨씬 빠르고 안전합니다.
+          e-file 하면 위의 우편 주소 걱정도 없습니다.
         </Callout>
       </>
     );
@@ -1154,6 +1475,13 @@ export default function TaxGuide() {
           세금 환급 상태를 확인하는 방법
         </p>
 
+        <Callout type="info" label="다시 한번">
+          <strong>세금 신고(Tax Return) &ne; 환급(Refund)</strong>
+          <br />
+          세금 신고는 의무이며, 결과에 따라 환급이 있을 수도, 추가 납부가 있을 수도 있습니다.
+          원천징수(W-2 Box 2)된 금액이 실제 세금보다 많았다면 차액을 환급받습니다.
+        </Callout>
+
         <SectionLabel>연방세 환급 추적</SectionLabel>
         <Prose>
           <p>
@@ -1170,7 +1498,9 @@ export default function TaxGuide() {
           </p>
           <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-light)" }}>
             <li>&bull;{" "}
-              <T tip="Social Security Number — 미국 사회보장번호. 9자리 숫자입니다.">SSN</T>
+              <T tip="Social Security Number — 미국 사회보장번호. 9자리 숫자입니다.">SSN</T>{" "}
+              (또는{" "}
+              <T tip="Individual Taxpayer Identification Number — SSN이 없는 외국인을 위한 납세자 번호.">ITIN</T>)
             </li>
             <li>&bull;{" "}
               <T tip="Filing Status — 세금 신고 시의 납세자 상태 (Single, Married 등). Sprintax 서류에서 확인 가능합니다.">
@@ -1198,7 +1528,7 @@ export default function TaxGuide() {
             <p className="font-[family-name:var(--font-serif)] text-[28px] font-black" style={{ color: "var(--ink)" }}>
               6~12주
             </p>
-            <p className="text-[11px]" style={{ color: "var(--ink-faint)" }}>도착 후 6주부터 조회</p>
+            <p className="text-[11px]" style={{ color: "var(--ink-faint)" }}>약 4주 후부터 조회 가능</p>
           </div>
           <div className="py-5 px-4 text-center" style={{ background: "var(--paper)" }}>
             <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--ink-muted)" }}>
@@ -1207,7 +1537,7 @@ export default function TaxGuide() {
             <p className="font-[family-name:var(--font-serif)] text-[28px] font-black" style={{ color: "var(--moss)" }}>
               2~3주
             </p>
-            <p className="text-[11px]" style={{ color: "var(--ink-faint)" }}>24시간 후 조회 가능</p>
+            <p className="text-[11px]" style={{ color: "var(--ink-faint)" }}>약 24시간 후 조회 가능</p>
           </div>
         </div>
 
@@ -1252,6 +1582,48 @@ export default function TaxGuide() {
           </li>
         </ul>
 
+        <SectionLabel>자주 하는 실수 5가지</SectionLabel>
+        <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+          {[
+            {
+              mistake: "NRA인데 TurboTax로 신고",
+              fix: "NRA는 반드시 Sprintax 또는 GLACIER Tax Prep 사용",
+            },
+            {
+              mistake: "Form 8843 제출 누락",
+              fix: "소득이 없어도 NRA라면 반드시 제출 (배우자/자녀도 각각)",
+            },
+            {
+              mistake: "조세조약 혜택 미청구",
+              fix: "1040-NR에서 Treaty Article 21 혜택 반드시 기입",
+            },
+            {
+              mistake: "연방세와 주세를 같은 봉투로 발송",
+              fix: "반드시 별도 봉투, 별도 주소로 각각 발송",
+            },
+            {
+              mistake: "UPS/FedEx로 IRS에 발송",
+              fix: "IRS 주소는 P.O. Box — USPS만 배달 가능",
+            },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="py-3.5"
+              style={{ borderBottom: "1px solid var(--rule-light)" }}
+            >
+              <p className="text-[14px] font-medium" style={{ color: "var(--accent)" }}>
+                <span className="font-[family-name:var(--font-mono)] text-[11px] mr-2">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                {item.mistake}
+              </p>
+              <p className="text-[13px] mt-1 ml-[28px]" style={{ color: "var(--ink-muted)" }}>
+                &rarr; {item.fix}
+              </p>
+            </div>
+          ))}
+        </div>
+
         <SectionLabel>문제가 생겼다면?</SectionLabel>
         <div className="space-y-3 text-[14px]" style={{ color: "var(--ink-light)" }}>
           <p>
@@ -1264,7 +1636,7 @@ export default function TaxGuide() {
             (전화 시 &ldquo;nonresident for tax purposes&rdquo;라고 안내)
           </p>
           <p>
-            <strong>재발송 시:</strong> Priority Mail 강력 추천.
+            <strong>재발송 시:</strong> USPS Priority Mail 강력 추천.
           </p>
         </div>
 
@@ -1293,6 +1665,41 @@ export default function TaxGuide() {
             className="w-12 h-[2px] mx-auto mt-5"
             style={{ background: "var(--accent)" }}
           />
+        </div>
+
+        {/* Contact & Credit */}
+        <SectionLabel>기타 문의</SectionLabel>
+        <Prose>
+          <p>
+            가이드 관련 문의나 오류 제보는 아래 이메일로 보내주세요.
+          </p>
+        </Prose>
+        <div
+          className="mt-4 p-5"
+          style={{ background: "var(--paper)", border: "1px solid var(--rule)", borderRadius: 2 }}
+        >
+          <p className="font-[family-name:var(--font-mono)] text-[14px]" style={{ color: "var(--ink)" }}>
+            <a href="mailto:gmlcks00513@gmail.com" style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3 }}>
+              gmlcks00513@gmail.com
+            </a>
+          </p>
+        </div>
+
+        <div
+          className="mt-8 pt-6 pb-2 text-center"
+          style={{ borderTop: "1px solid var(--rule-light)" }}
+        >
+          <p className="font-[family-name:var(--font-mono)] text-[11px] tracking-wide" style={{ color: "var(--ink-faint)" }}>
+            Developed by{" "}
+            <a
+              href="https://www.instagram.com/dev_seochan/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--ink-muted)", textDecoration: "underline", textUnderlineOffset: 3 }}
+            >
+              서찬
+            </a>
+          </p>
         </div>
       </>
     );
