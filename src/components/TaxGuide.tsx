@@ -426,6 +426,28 @@ export default function TaxGuide() {
     });
   };
 
+  /* ---- Auto-hide header on scroll down, show on scroll up ---- */
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const THRESHOLD = 10;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y < 48) {
+        // Always show header near top
+        setHeaderHidden(false);
+      } else if (y - lastScrollY.current > THRESHOLD) {
+        setHeaderHidden(true);
+      } else if (lastScrollY.current - y > THRESHOLD) {
+        setHeaderHidden(false);
+      }
+      lastScrollY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const arrivalNum = parseInt(arrivalYear);
   const isValidYear = !isNaN(arrivalNum) && arrivalNum >= 2015 && arrivalNum <= 2026;
   const visa = visaType ? VISA_CONFIGS[visaType] : null;
@@ -434,10 +456,11 @@ export default function TaxGuide() {
     <div className="min-h-screen" style={{ background: "var(--cream)" }}>
       {/* ---- Top bar ---- */}
       <header
-        className="sticky top-0 z-40 backdrop-blur-md"
+        className="sticky top-0 z-40 backdrop-blur-md transition-transform duration-300 ease-out"
         style={{
           background: "rgba(247, 248, 250, 0.85)",
           borderBottom: "1px solid var(--rule)",
+          transform: headerHidden ? "translateY(-100%)" : "translateY(0)",
         }}
       >
         <div className="max-w-[680px] mx-auto px-5 sm:px-8 h-12 flex items-center justify-between">
@@ -529,10 +552,11 @@ export default function TaxGuide() {
 
         {/* ---- Footer nav ---- */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md"
+          className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md transition-transform duration-300 ease-out"
           style={{
             background: "rgba(247, 248, 250, 0.9)",
             borderTop: "1px solid var(--rule)",
+            transform: headerHidden ? "translateY(100%)" : "translateY(0)",
           }}
         >
           <div className="max-w-[680px] mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
