@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  /* Warm paper tones — aged stationery feel */
-  --cream: #f0ebe1;
-  --paper: #f7f3ec;
-  --ink: #22201c;
-  --ink-light: #433f38;
-  --ink-muted: #848075;
-  --ink-faint: #b8b3a7;
+  /* Clean cool-white base */
+  --cream: #f7f8fa;
+  --paper: #ffffff;
+  --ink: #1a1d23;
+  --ink-light: #3b3f47;
+  --ink-muted: #6b7280;
+  --ink-faint: #9ca3af;
 
-  /* Single bold accent — burnt sienna / terracotta */
-  --accent: #b83d1e;
-  --accent-soft: #d95a3a;
-  --accent-bg: #fcefea;
+  /* Accent — deep blue */
+  --accent: #2563eb;
+  --accent-soft: #3b82f6;
+  --accent-bg: #eff6ff;
 
   /* Supporting tones */
-  --moss: #3a6b52;
-  --moss-bg: #ecf3ee;
-  --ochre: #8a6511;
-  --ochre-bg: #f8f1df;
+  --moss: #059669;
+  --moss-bg: #ecfdf5;
+  --ochre: #d97706;
+  --ochre-bg: #fffbeb;
 
   /* Structural */
-  --rule: #d1cabb;
-  --rule-light: #e2dbd0;
+  --rule: #e5e7eb;
+  --rule-light: #f3f4f6;
 }
 
 @theme inline {

@@ -377,7 +377,7 @@ export default function TaxGuide() {
       <header
         className="sticky top-0 z-40 backdrop-blur-md"
         style={{
-          background: "rgba(245, 240, 232, 0.85)",
+          background: "rgba(247, 248, 250, 0.85)",
           borderBottom: "1px solid var(--rule)",
         }}
       >
@@ -472,7 +472,7 @@ export default function TaxGuide() {
         <div
           className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md"
           style={{
-            background: "rgba(245, 240, 232, 0.9)",
+            background: "rgba(247, 248, 250, 0.9)",
             borderTop: "1px solid var(--rule)",
           }}
         >

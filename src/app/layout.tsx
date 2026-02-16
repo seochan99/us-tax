@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   title: "미국 세금 가이드 — 비자별 맞춤 세금 신고 안내서",
   description:
     "한국인을 위한 미국 세금 신고 가이드. F-1 유학생, J-1 연구원/학생, H-1B 취업, 동반비자(J-2/F-2/H-4) 비자별 맞춤 안내.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
