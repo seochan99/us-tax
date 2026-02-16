@@ -415,7 +415,9 @@ export default function TaxGuide() {
     setDirection(dir ?? (s > step ? "left" : "right"));
     setStep(s);
     setVisited((prev) => new Set(prev).add(s));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // iOS Safari에서 smooth scrollTo가 동작하지 않는 문제 대응
+    window.scrollTo(0, 0);
+    setTimeout(() => window.scrollTo(0, 0), 50);
   };
   const goNext = () => { if (step < STEPS.length - 1) goTo(step + 1, "left"); };
   const goPrev = () => { if (step > 0) goTo(step - 1, "right"); };
