@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 /* ================================================================
    LOCAL STORAGE HELPERS
@@ -209,32 +210,90 @@ const NO_TAX_STATES = [
 
 function T({ children, tip }: { children: ReactNode; tip: string }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; arrowLeft: number } | null>(null);
+  const ref = useRef<HTMLSpanElement>(null);
+  const tipRef = useRef<HTMLSpanElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  const reposition = useCallback(() => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const tipW = Math.min(300, window.innerWidth - 32);
+    let left = rect.left + rect.width / 2 - tipW / 2;
+    const arrowIdeal = tipW / 2;
+    let arrowLeft = arrowIdeal;
+
+    // clamp horizontally
+    if (left < 16) {
+      arrowLeft = arrowIdeal + (left - 16);
+      left = 16;
+    } else if (left + tipW > window.innerWidth - 16) {
+      const overflow = left + tipW - (window.innerWidth - 16);
+      arrowLeft = arrowIdeal + overflow;
+      left = window.innerWidth - 16 - tipW;
+    }
+    arrowLeft = Math.max(12, Math.min(tipW - 12, arrowLeft));
+
+    // place above trigger; if not enough space, place below
+    let top = rect.top - 10;
+    setPos({ top, left, arrowLeft });
+  }, []);
+
+  const handleOpen = useCallback(() => {
+    reposition();
+    setOpen(true);
+  }, [reposition]);
+
+  const handleClose = useCallback(() => setOpen(false), []);
 
   return (
-    <span
-      className={`term-tooltip${open ? " tt-open" : ""}`}
-      tabIndex={0}
-      role="button"
-      aria-label={`${typeof children === "string" ? children : "용어"} 설명 보기`}
-      onClick={(e) => {
-        e.stopPropagation();
-        setOpen((v) => !v);
-      }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      onFocus={() => setOpen(true)}
-      onBlur={() => setOpen(false)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          setOpen((v) => !v);
-        }
-        if (e.key === "Escape") setOpen(false);
-      }}
-    >
-      {children}
-      <span className="tt-content" role="tooltip">{tip}</span>
-    </span>
+    <>
+      <span
+        ref={ref}
+        className={`term-tooltip${open ? " tt-open" : ""}`}
+        tabIndex={0}
+        role="button"
+        aria-label={`${typeof children === "string" ? children : "용어"} 설명 보기`}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (open) handleClose();
+          else handleOpen();
+        }}
+        onMouseEnter={handleOpen}
+        onMouseLeave={handleClose}
+        onFocus={handleOpen}
+        onBlur={handleClose}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            if (open) handleClose();
+            else handleOpen();
+          }
+          if (e.key === "Escape") handleClose();
+        }}
+      >
+        {children}
+      </span>
+      {mounted && open && pos && createPortal(
+        <span
+          ref={tipRef}
+          className="tt-portal"
+          role="tooltip"
+          style={{
+            position: "fixed",
+            bottom: `${window.innerHeight - pos.top}px`,
+            left: `${pos.left}px`,
+            zIndex: 9998,
+          }}
+        >
+          {tip}
+          <span className="tt-arrow" style={{ left: `${pos.arrowLeft}px` }} />
+        </span>,
+        document.body
+      )}
+    </>
   );
 }
 
