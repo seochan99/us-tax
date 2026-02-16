@@ -401,6 +401,7 @@ export default function TaxGuide() {
   const [visaType, setVisaType] = useState<VisaType | "">(() =>
     loadFromLS<VisaType | "">(LS_KEYS.visaType, ""),
   );
+  const [direction, setDirection] = useState<"left" | "right" | "none">("none");
 
   /* Persist to localStorage on change */
   useEffect(() => { saveToLS(LS_KEYS.step, step); }, [step]);
@@ -409,13 +410,15 @@ export default function TaxGuide() {
   useEffect(() => { saveToLS(LS_KEYS.visited, [...visited]); }, [visited]);
   useEffect(() => { saveToLS(LS_KEYS.visaType, visaType); }, [visaType]);
 
-  const goTo = (s: number) => {
+  const goTo = (s: number, dir?: "left" | "right") => {
+    if (s === step) return;
+    setDirection(dir ?? (s > step ? "left" : "right"));
     setStep(s);
     setVisited((prev) => new Set(prev).add(s));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const goNext = () => goTo(Math.min(step + 1, STEPS.length - 1));
-  const goPrev = () => goTo(Math.max(step - 1, 0));
+  const goNext = () => { if (step < STEPS.length - 1) goTo(step + 1, "left"); };
+  const goPrev = () => { if (step > 0) goTo(step - 1, "right"); };
 
   const toggleDoc = (id: string) => {
     setCheckedDocs((prev) => {
@@ -425,6 +428,42 @@ export default function TaxGuide() {
       return next;
     });
   };
+
+  /* ---- Keyboard navigation (← → arrows) ---- */
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+      if (e.key === "ArrowRight") { goNext(); }
+      else if (e.key === "ArrowLeft") { goPrev(); }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
+  /* ---- Mobile swipe gestures ---- */
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  useEffect(() => {
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+      touchStartY.current = e.touches[0].clientY;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      const dy = e.changedTouches[0].clientY - touchStartY.current;
+      if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+      if (dx < 0) goNext();
+      else goPrev();
+    };
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  });
 
   /* ---- Auto-hide header on scroll down, show on scroll up ---- */
   const [headerHidden, setHeaderHidden] = useState(false);
@@ -529,17 +568,24 @@ export default function TaxGuide() {
         </nav>
 
         {/* ---- Mobile step label ---- */}
-        <div className="md:hidden pt-8">
+        <div className="md:hidden pt-8 flex items-center gap-2">
           <span
             className="font-[family-name:var(--font-mono)] text-[11px] font-bold tracking-[0.12em] uppercase"
             style={{ color: "var(--accent)" }}
           >
             Step {String(step + 1).padStart(2, "0")}
           </span>
+          <span className="text-[11px]" style={{ color: "var(--ink-faint)" }}>&mdash;</span>
+          <span className="text-[11px] font-medium" style={{ color: "var(--ink-muted)" }}>
+            {STEPS[step]}
+          </span>
         </div>
 
         {/* ---- Content ---- */}
-        <main className="pt-8 pb-32 animate-step" key={`${step}-${visaType}`}>
+        <main
+          className={`pt-8 pb-32 ${direction === "left" ? "animate-step-left" : direction === "right" ? "animate-step-right" : "animate-step"}`}
+          key={`${step}-${visaType}-${direction}`}
+        >
           {step === 0 && <Step0 />}
           {step === 1 && <Step1 />}
           {step === 2 && <Step2 />}
@@ -552,11 +598,10 @@ export default function TaxGuide() {
 
         {/* ---- Footer nav ---- */}
         <div
-          className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md transition-transform duration-300 ease-out"
+          className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md"
           style={{
             background: "rgba(247, 248, 250, 0.9)",
             borderTop: "1px solid var(--rule)",
-            transform: headerHidden ? "translateY(100%)" : "translateY(0)",
           }}
         >
           <div className="max-w-[680px] mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
@@ -591,7 +636,7 @@ export default function TaxGuide() {
             </div>
 
             <button
-              onClick={step === STEPS.length - 1 ? () => goTo(0) : goNext}
+              onClick={step === STEPS.length - 1 ? () => goTo(0, "right") : goNext}
               className="text-sm font-medium"
               style={{ color: "var(--accent)" }}
             >
@@ -1593,6 +1638,20 @@ export default function TaxGuide() {
             );
           })}
         </div>
+
+        {allChecked && (
+          <div
+            className="animate-checklist-complete my-6 px-5 py-4 rounded-sm"
+            style={{ background: "var(--moss-bg)", borderLeft: "3px solid var(--moss)" }}
+          >
+            <p className="text-sm font-medium" style={{ color: "var(--moss)" }}>
+              모든 서류가 준비되었습니다!
+            </p>
+            <p className="text-[12.5px] mt-1" style={{ color: "var(--ink-muted)" }}>
+              다음 단계로 넘어가 세금 신고를 진행하세요.
+            </p>
+          </div>
+        )}
 
         <Callout type="info" label="W-2는 언제?">
           고용주는 매년 <strong>1월 말~2월 초</strong>에{" "}

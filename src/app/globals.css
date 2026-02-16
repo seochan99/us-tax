@@ -74,8 +74,47 @@ body::before {
   }
 }
 
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .animate-step {
   animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-step-left {
+  animation: slideInLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-step-right {
+  animation: slideInRight 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes checklistComplete {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-checklist-complete {
+  animation: checklistComplete 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Tooltip trigger */
