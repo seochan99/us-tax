@@ -24,9 +24,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 const SITE_URL = "https://us-tax-lovat.vercel.app";
-const TITLE = "미국 세금 가이드 — 비자별 맞춤 세금 신고 안내서";
+const TITLE = "미국 세금 가이드 — 비자별·신분별 맞춤 세금 신고 안내서";
 const DESCRIPTION =
-  "한국인을 위한 미국 세금 신고 단계별 가이드. F-1 유학생, J-1 연구원/교환학생, H-1B 취업비자, 동반비자(F-2/J-2/H-4) 비자 유형별 거주자 판정, 조세조약, 서류 체크리스트, 연방세·주세 신고 방법을 안내합니다.";
+  "한국인을 위한 미국 세금 신고 단계별 가이드. F-1 유학생, J-1 연구원/교환학생, H-1B 취업비자, 동반비자(F-2/J-2/H-4), 영주권자(Green Card), 시민권자 신분별 거주자 판정, 조세조약, FBAR/FATCA, FTC/FEIE, 서류 체크리스트, 연방세·주세 신고 방법을 안내합니다.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -40,11 +40,18 @@ export const metadata: Metadata = {
     "H-1B 세금",
     "유학생 세금",
     "비거주자 세금",
+    "영주권자 세금",
+    "시민권자 세금",
     "Tax Return",
     "1040-NR",
+    "Form 1040",
     "Sprintax",
     "조세조약",
     "한미 조세조약",
+    "FBAR",
+    "FATCA",
+    "Foreign Tax Credit",
+    "해외계좌 신고",
   ],
   openGraph: {
     title: TITLE,

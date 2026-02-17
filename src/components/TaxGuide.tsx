@@ -47,7 +47,7 @@ const STEPS = [
   "환급 추적",
 ];
 
-type VisaType = "f1-student" | "j1-researcher" | "j1-student" | "h1b" | "dependent";
+type VisaType = "f1-student" | "j1-researcher" | "j1-student" | "h1b" | "dependent" | "green-card" | "citizen";
 
 interface DocItem {
   id: string;
@@ -66,6 +66,11 @@ interface VisaConfig {
   nraToolsOnly: boolean;
   docs: DocItem[];
   form8233: boolean;
+  alwaysResident?: boolean;
+  filingStatuses?: string[];
+  standardDeductions?: Record<string, string>;
+  worldwideIncome?: boolean;
+  efilePrimary?: boolean;
 }
 
 const COMMON_DOCS: DocItem[] = [
@@ -197,7 +202,89 @@ const VISA_CONFIGS: Record<VisaType, VisaConfig> = {
     ],
     form8233: false,
   },
+  "green-card": {
+    label: "Green Card",
+    labelKo: "영주권자",
+    desc: "미국 영주권(Permanent Resident Card) 소지자",
+    sptExemptYears: 0,
+    treatyArticle: "",
+    treatyBenefit: "",
+    ficaExempt: false,
+    nraToolsOnly: false,
+    alwaysResident: true,
+    worldwideIncome: true,
+    efilePrimary: true,
+    filingStatuses: ["Single", "Married Filing Jointly (MFJ)", "Married Filing Separately (MFS)", "Head of Household (HoH)", "Qualifying Surviving Spouse (QSS)"],
+    standardDeductions: { "Single": "$15,700", "MFJ": "$31,400", "MFS": "$15,700", "HoH": "$23,500", "QSS": "$31,400" },
+    docs: [
+      { id: "passport", label: "여권 (Passport)", desc: "유효한 여권 원본" },
+      { id: "greencard", label: "영주권 카드 (Green Card)", desc: "Form I-551, Permanent Resident Card" },
+      { id: "ssn", label: "SSN", desc: "Social Security Number (영주권자는 SSN 발급 대상)" },
+      { id: "w2", label: "W-2", desc: "고용주 발급 (1~2월), 급여 및 원천징수 내역" },
+      { id: "1099int", label: "1099-INT (해당 시)", desc: "은행 이자 소득이 있는 경우" },
+      { id: "1099div", label: "1099-DIV (해당 시)", desc: "배당금 소득이 있는 경우" },
+      { id: "1099nec", label: "1099-NEC (해당 시)", desc: "독립 계약자(프리랜서) 소득이 있는 경우" },
+      { id: "kr-income", label: "한국 소득 자료", desc: "한국 근로소득·사업소득·이자·배당 등 소득 내역 (홈택스 소득금액증명원)" },
+      { id: "kr-tax", label: "한국 세금 납부 증명", desc: "홈택스 납세증명서, 원천징수영수증 등 (FTC 신청 시 필요)" },
+      { id: "bank-foreign", label: "해외 금융계좌 정보 (FBAR/FATCA)", desc: "한국 은행·증권·보험 계좌의 연중 최고 잔액 (합산 $10,000 초과 시 FBAR 필수)" },
+      { id: "form2555", label: "Form 2555 관련 자료 (해당 시)", desc: "해외 근로소득 공제(FEIE) 신청 시 — 해외 거주 증빙, 고용 계약서 등" },
+      { id: "form1116", label: "Form 1116 관련 자료 (해당 시)", desc: "외국납부세액공제(FTC) 신청 시 — 한국 납부 세금 영수증" },
+      { id: "prev", label: "전년도 세금 신고서 사본", desc: "이전에 신고한 적이 있는 경우" },
+    ],
+    form8233: false,
+  },
+  "citizen": {
+    label: "US Citizen",
+    labelKo: "시민권자",
+    desc: "미국 시민권을 취득한 한국 출신 시민권자",
+    sptExemptYears: 0,
+    treatyArticle: "",
+    treatyBenefit: "",
+    ficaExempt: false,
+    nraToolsOnly: false,
+    alwaysResident: true,
+    worldwideIncome: true,
+    efilePrimary: true,
+    filingStatuses: ["Single", "Married Filing Jointly (MFJ)", "Married Filing Separately (MFS)", "Head of Household (HoH)", "Qualifying Surviving Spouse (QSS)"],
+    standardDeductions: { "Single": "$15,700", "MFJ": "$31,400", "MFS": "$15,700", "HoH": "$23,500", "QSS": "$31,400" },
+    docs: [
+      { id: "passport", label: "미국 여권 (US Passport)", desc: "유효한 미국 여권 또는 시민권 증명서" },
+      { id: "ssn", label: "SSN", desc: "Social Security Number" },
+      { id: "w2", label: "W-2", desc: "고용주 발급 (1~2월), 급여 및 원천징수 내역" },
+      { id: "1099int", label: "1099-INT (해당 시)", desc: "은행 이자 소득이 있는 경우" },
+      { id: "1099div", label: "1099-DIV (해당 시)", desc: "배당금 소득이 있는 경우" },
+      { id: "1099nec", label: "1099-NEC (해당 시)", desc: "독립 계약자(프리랜서) 소득이 있는 경우" },
+      { id: "kr-income", label: "한국 소득 자료", desc: "한국 근로소득·사업소득·이자·배당 등 소득 내역 (홈택스 소득금액증명원)" },
+      { id: "kr-tax", label: "한국 세금 납부 증명", desc: "홈택스 납세증명서, 원천징수영수증 등 (FTC 신청 시 필요)" },
+      { id: "bank-foreign", label: "해외 금융계좌 정보 (FBAR/FATCA)", desc: "한국 은행·증권·보험 계좌의 연중 최고 잔액 (합산 $10,000 초과 시 FBAR 필수)" },
+      { id: "form2555", label: "Form 2555 관련 자료 (해당 시)", desc: "해외 근로소득 공제(FEIE) 신청 시 — 해외 거주 증빙, 고용 계약서 등" },
+      { id: "form1116", label: "Form 1116 관련 자료 (해당 시)", desc: "외국납부세액공제(FTC) 신청 시 — 한국 납부 세금 영수증" },
+      { id: "prev", label: "전년도 세금 신고서 사본", desc: "이전에 신고한 적이 있는 경우" },
+    ],
+    form8233: false,
+  },
 };
+
+const RESIDENT_REFERENCE_LINKS: { label: string; url: string; desc: string }[] = [
+  { label: "Publication 519 — U.S. Tax Guide for Aliens", url: "https://www.irs.gov/publications/p519", desc: "외국인을 위한 미국 세금 종합 가이드" },
+  { label: "Publication 514 — Foreign Tax Credit for Individuals", url: "https://www.irs.gov/publications/p514", desc: "외국납부세액공제(FTC) 상세 안내" },
+  { label: "Form 1040 — U.S. Individual Income Tax Return", url: "https://www.irs.gov/forms-pubs/about-form-1040", desc: "미국 개인 소득세 신고 양식" },
+  { label: "Form 4868 — Application for Extension", url: "https://www.irs.gov/forms-pubs/about-form-4868", desc: "세금 신고 기한 연장 신청서 (6개월 자동 연장)" },
+  { label: "Form 2555 — Foreign Earned Income Exclusion", url: "https://www.irs.gov/forms-pubs/about-form-2555", desc: "해외 근로소득 공제(FEIE) 신청 양식" },
+  { label: "Form 1116 — Foreign Tax Credit", url: "https://www.irs.gov/forms-pubs/about-form-1116", desc: "외국납부세액공제(FTC) 신청 양식" },
+  { label: "Form 8938 — FATCA (Statement of Foreign Financial Assets)", url: "https://www.irs.gov/forms-pubs/about-form-8938", desc: "해외 금융자산 신고 (FATCA)" },
+  { label: "Form 8833 — Treaty-Based Return Position", url: "https://www.irs.gov/forms-pubs/about-form-8833", desc: "조세조약 기반 포지션 공개" },
+  { label: "Form 3520 — Foreign Trusts & Gifts", url: "https://www.irs.gov/forms-pubs/about-form-3520", desc: "해외 신탁/증여/상속 보고 ($100K 이상)" },
+  { label: "Form 5471 — Foreign Corporation", url: "https://www.irs.gov/forms-pubs/about-form-5471", desc: "외국법인 지분 보고" },
+  { label: "Form 8865 — Foreign Partnership", url: "https://www.irs.gov/forms-pubs/about-form-8865", desc: "외국 파트너십 보고" },
+  { label: "Form 8621 — PFIC", url: "https://www.irs.gov/forms-pubs/about-form-8621", desc: "Passive Foreign Investment Company 보고 (한국 펀드/ETF)" },
+  { label: "Form 8858 — Foreign Disregarded Entity", url: "https://www.irs.gov/forms-pubs/about-form-8858", desc: "해외 disregarded entity 보고" },
+  { label: "Form 3520-A — Foreign Trust Annual Report", url: "https://www.irs.gov/forms-pubs/about-form-3520-a", desc: "외국 신탁 연례 보고" },
+  { label: "FinCEN FBAR (BSA E-Filing)", url: "https://bsaefiling.fincen.treas.gov/", desc: "해외 금융계좌 보고 — FinCEN 114 전자 제출" },
+  { label: "IRS Yearly Average Currency Exchange Rates", url: "https://www.irs.gov/individuals/international-taxpayers/yearly-average-currency-exchange-rates", desc: "IRS 공식 연평균 환율 (한국 원→미국 달러)" },
+  { label: "Korea-US Tax Treaty (한미 조세조약)", url: "https://www.irs.gov/businesses/international-businesses/united-states-income-tax-treaties-a-to-z", desc: "한미 조세조약 전문 — Saving Clause 포함" },
+  { label: "FBAR vs Form 8938 비교", url: "https://www.irs.gov/businesses/comparison-of-form-8938-and-fbar-requirements", desc: "FBAR와 Form 8938의 차이점 공식 비교표" },
+];
 
 const NO_TAX_STATES = [
   "Alaska", "Florida", "Nevada", "New Hampshire",
@@ -655,12 +742,19 @@ export default function TaxGuide() {
      ============================================================== */
 
   function Step0() {
+    const isResident = visaType === "green-card" || visaType === "citizen";
+
     const visaOptions: { key: VisaType; label: string; labelKo: string }[] = [
       { key: "f1-student", label: "F-1", labelKo: "유학생" },
       { key: "j1-researcher", label: "J-1", labelKo: "연구원/교수" },
       { key: "j1-student", label: "J-1", labelKo: "교환학생" },
       { key: "h1b", label: "H-1B", labelKo: "취업비자" },
       { key: "dependent", label: "동반비자", labelKo: "J-2/F-2/H-4" },
+    ];
+
+    const residentOptions: { key: VisaType; label: string; labelKo: string }[] = [
+      { key: "green-card", label: "Green Card", labelKo: "영주권자" },
+      { key: "citizen", label: "US Citizen", labelKo: "시민권자" },
     ];
 
     return (
@@ -674,11 +768,13 @@ export default function TaxGuide() {
           처음이라 막막한 당신을 위해.
         </h1>
         <p className="text-[15px] mb-10" style={{ color: "var(--ink-muted)" }}>
-          한국인 비자 소지자를 위한 단계별 세금 신고 안내서
+          {isResident
+            ? "한국인 영주권자·시민권자를 위한 단계별 세금 신고 안내서"
+            : "한국인 비자 소지자를 위한 단계별 세금 신고 안내서"}
         </p>
 
         {/* ---- Visa selector ---- */}
-        <SectionLabel>본인의 비자를 선택하세요</SectionLabel>
+        <SectionLabel>비자 소지자</SectionLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-8">
           {visaOptions.map((opt) => {
             const selected = visaType === opt.key;
@@ -714,13 +810,174 @@ export default function TaxGuide() {
           })}
         </div>
 
+        <SectionLabel>영주권자 / 시민권자</SectionLabel>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-8">
+          {residentOptions.map((opt) => {
+            const selected = visaType === opt.key;
+            return (
+              <button
+                key={opt.key}
+                onClick={() => {
+                  setVisaType(opt.key);
+                  setCheckedDocs(new Set());
+                }}
+                className="text-left p-4 transition-all"
+                style={{
+                  background: selected ? "var(--ink)" : "var(--paper)",
+                  border: `1.5px solid ${selected ? "var(--ink)" : "var(--rule)"}`,
+                  borderRadius: 4,
+                  cursor: "pointer",
+                }}
+              >
+                <p
+                  className="font-[family-name:var(--font-mono)] text-[12px] font-bold uppercase tracking-wide mb-1"
+                  style={{ color: selected ? "var(--accent-soft)" : "var(--accent)" }}
+                >
+                  {opt.label}
+                </p>
+                <p
+                  className="text-[14px] font-medium"
+                  style={{ color: selected ? "var(--paper)" : "var(--ink)" }}
+                >
+                  {opt.labelKo}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+
         {!visaType && (
           <Callout type="info" label="안내">
-            비자를 선택하면 해당 비자에 맞는 맞춤형 세금 가이드가 표시됩니다.
+            먼저 비자 또는 신분을 선택하면 맞춤형 세금 가이드가 표시됩니다.
           </Callout>
         )}
 
-        {visa && (
+        {visa && isResident ? (
+          <>
+            <Callout type="tip" label={`${visa.label} ${visa.labelKo}`}>
+              {visa.desc}
+            </Callout>
+
+            <Callout type="info" label="핵심 개념">
+              <strong>&ldquo;세금 신고(Tax Return)&rdquo; &ne; &ldquo;환급(Refund)&rdquo;</strong>
+              <br /><br />
+              세금 신고(Tax Return)는 <strong>지난해 소득을 IRS에 보고하는 절차</strong>이며, 모든 해당자가 의무적으로 해야 합니다.
+              환급(Refund)은 원천징수된 세금 중 초과 납부분을 돌려받는 것으로, 신고 결과에 따라 <strong>환급이 없거나 오히려 추가 납부</strong>할 수도 있습니다.
+            </Callout>
+
+            {/* Key numbers — Resident */}
+            <div
+              className="grid grid-cols-3 gap-px my-10 overflow-hidden"
+              style={{ background: "var(--rule)", borderRadius: 2 }}
+            >
+              {[
+                { label: "과세연도", value: "2025", sub: "2025 Tax Year 소득" },
+                { label: "기본 마감일", value: "4.15", sub: "2026년 4월 15일 (수)" },
+                { label: "비용", value: "$0–50", sub: "도구 사용료" },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="text-center py-5 px-3"
+                  style={{ background: "var(--paper)" }}
+                >
+                  <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--ink-muted)" }}>
+                    {item.label}
+                  </p>
+                  <p className="font-[family-name:var(--font-serif)] text-[28px] font-black leading-none" style={{ color: "var(--accent)" }}>
+                    {item.value}
+                  </p>
+                  <p className="text-[11px] mt-1.5" style={{ color: "var(--ink-faint)" }}>
+                    {item.sub}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <SectionLabel>마감일 정리</SectionLabel>
+            <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+              {[
+                {
+                  case_: "일반 마감일",
+                  date: "2026년 4월 15일",
+                  note: "미국 내 거주자 기본 마감",
+                },
+                {
+                  case_: "자동 연장 (Form 4868)",
+                  date: "2026년 10월 15일",
+                  note: "4/15까지 Form 4868 제출 시 6개월 자동 연장",
+                },
+                {
+                  case_: "해외 거주자 자동 연장",
+                  date: "2026년 6월 15일",
+                  note: "과세연도 말 기준 미국 밖 거주 시 자동 2개월 연장",
+                },
+              ].map((item) => (
+                <div
+                  key={item.case_}
+                  className="flex flex-col gap-1 py-3.5"
+                  style={{ borderBottom: "1px solid var(--rule-light)" }}
+                >
+                  <p className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>
+                    {item.case_}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="font-[family-name:var(--font-mono)] text-[13px] font-bold"
+                      style={{ color: "var(--accent)" }}
+                    >
+                      {item.date}
+                    </span>
+                    <span className="text-[12px]" style={{ color: "var(--ink-faint)" }}>
+                      {item.note}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <SectionLabel>신고 케이스</SectionLabel>
+            <Prose>
+              <p className="mb-4">영주권자·시민권자는 항상 거주자(Resident)로서 Form 1040을 사용합니다:</p>
+            </Prose>
+            <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+              <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>Form 1040</span>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>
+                    미국 개인 소득세 신고
+                  </span>
+                </div>
+                <p className="text-[13px] ml-[88px]" style={{ color: "var(--ink-muted)" }}>
+                  TurboTax, H&R Block, FreeTaxUSA 등 일반 소프트웨어로 작성 · e-file 가능
+                </p>
+              </div>
+            </div>
+
+            <SectionLabel>이 가이드에서 다루는 내용</SectionLabel>
+            <div className="space-y-3">
+              {[
+                "거주자 확인 및 Filing Status",
+                "이중과세 방지 — FTC & FEIE",
+                "필요 서류 체크리스트",
+                "연방세 — 전세계 소득 + FBAR/FATCA",
+                "주세(State Tax) 신고 방법",
+                "서류 제출 (e-file)",
+                "환급 추적 및 참고 링크",
+              ].map((item, i) => (
+                <div key={i} className="flex items-baseline gap-3">
+                  <span className="font-[family-name:var(--font-mono)] text-[11px] font-bold" style={{ color: "var(--ink-faint)" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-[15px]" style={{ color: "var(--ink-light)" }}>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <Callout type="warn" label="주의">
+              이 가이드는 일반적인 정보 제공 목적이며 전문 세무 상담을 대체하지 않습니다. 개인 상황에 따라 다를 수 있으므로 복잡한 경우 세무사(CPA) 상담을 권장합니다.
+            </Callout>
+          </>
+        ) : visa && !isResident ? (
           <>
             <Callout type="tip" label={`${visa.label} ${visa.labelKo}`}>
               {visa.desc}
@@ -987,7 +1244,7 @@ export default function TaxGuide() {
               이 가이드는 일반적인 정보 제공 목적이며 전문 세무 상담을 대체하지 않습니다. 개인 상황에 따라 다를 수 있으므로 복잡한 경우 세무사 상담을 권장합니다.
             </Callout>
           </>
-        )}
+        ) : null}
       </>
     );
   }
@@ -999,10 +1256,95 @@ export default function TaxGuide() {
   function Step1() {
     if (!visa) return <VisaPrompt />;
 
+    const isResident = visaType === "green-card" || visaType === "citizen";
     const exemptYears = visa.sptExemptYears;
     const isH1B = visaType === "h1b";
     const isDependent = visaType === "dependent";
     const isStudent = visaType === "f1-student" || visaType === "j1-student";
+
+    if (isResident) {
+      return (
+        <>
+          <h1
+            className="font-[family-name:var(--font-serif)] text-[clamp(24px,4vw,36px)] font-black leading-[1.2] tracking-tight mb-2"
+            style={{ color: "var(--ink)" }}
+          >
+            거주자 상태 확인
+          </h1>
+          <p className="text-sm mb-8" style={{ color: "var(--ink-muted)" }}>
+            {visaType === "citizen" ? "시민권자" : "영주권자"}는 세법상 항상 거주자(Resident)입니다
+          </p>
+
+          <Callout type="tip" label="항상 거주자">
+            {visaType === "citizen"
+              ? "미국 시민권자는 세법상 항상 거주자(Resident)입니다. NRA/RA 판단(Substantial Presence Test)이 필요 없습니다."
+              : "영주권(Green Card) 소지자는 세법상 항상 거주자(Resident)입니다. Green Card Test에 의해 영주권을 취득한 첫해부터 RA로 분류됩니다."}
+          </Callout>
+
+          <Prose>
+            <p>
+              비자 소지자(F-1, J-1, H-1B 등)는 체류 일수에 따라 NRA/RA 판단이 필요하지만,
+              {visaType === "citizen" ? " 시민권자" : " 영주권자"}는 <strong>항상 거주자(Resident)</strong>로서{" "}
+              <Code>Form 1040</Code>을 사용합니다.
+            </p>
+          </Prose>
+
+          <SectionLabel>Filing Status (신고 유형)</SectionLabel>
+          <Prose>
+            <p className="mb-4">
+              Form 1040 작성 시 본인의 Filing Status를 선택해야 합니다. Filing Status에 따라 세율과 Standard Deduction이 달라집니다:
+            </p>
+          </Prose>
+          <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+            {[
+              { status: "Single", desc: "미혼이거나 12/31 기준 별거/이혼 상태" },
+              { status: "Married Filing Jointly (MFJ)", desc: "배우자와 공동 신고 — 대부분의 부부에게 가장 유리" },
+              { status: "Married Filing Separately (MFS)", desc: "배우자와 별도 신고 — 특수한 경우에만 유리" },
+              { status: "Head of Household (HoH)", desc: "미혼이면서 부양가족이 있고 가구의 50% 이상 비용을 부담" },
+              { status: "Qualifying Surviving Spouse (QSS)", desc: "배우자 사망 후 2년 이내, 부양 자녀가 있는 경우" },
+            ].map((item) => (
+              <div
+                key={item.status}
+                className="flex flex-col gap-1 py-3.5"
+                style={{ borderBottom: "1px solid var(--rule-light)" }}
+              >
+                <p className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>
+                  {item.status}
+                </p>
+                <p className="text-[12.5px]" style={{ color: "var(--ink-muted)" }}>
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <SectionLabel>Standard Deduction (2025 과세연도)</SectionLabel>
+          <div
+            className="grid grid-cols-1 gap-px my-4 overflow-hidden"
+            style={{ background: "var(--rule)", borderRadius: 2 }}
+          >
+            {[
+              { status: "Single", amount: "$15,700" },
+              { status: "MFJ / QSS", amount: "$31,400" },
+              { status: "HoH", amount: "$23,500" },
+              { status: "MFS", amount: "$15,700" },
+            ].map((item) => (
+              <div key={item.status} className="flex items-center justify-between p-4" style={{ background: "var(--paper)" }}>
+                <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>{item.status}</span>
+                <span className="font-[family-name:var(--font-mono)] text-[15px] font-bold" style={{ color: "var(--accent)" }}>{item.amount}</span>
+              </div>
+            ))}
+          </div>
+
+          <Callout type="info" label="MFJ가 일반적으로 유리">
+            부부가 모두 거주자인 경우 <strong>Married Filing Jointly (MFJ)</strong>가 일반적으로 가장 유리합니다.
+            Standard Deduction이 가장 크고, 세율 구간도 넓어 세금이 줄어듭니다.
+            <br /><br />
+            단, 배우자가 NRA인 경우에는 MFJ를 선택하면 배우자도 전 세계 소득을 신고해야 합니다.
+          </Callout>
+        </>
+      );
+    }
 
     return (
       <>
@@ -1294,10 +1636,173 @@ export default function TaxGuide() {
   function Step2() {
     if (!visa) return <VisaPrompt />;
 
+    const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
     const isDependent = visaType === "dependent";
     const isJ1Researcher = visaType === "j1-researcher";
     const isStudent = visaType === "f1-student" || visaType === "j1-student";
+
+    if (isResident) {
+      return (
+        <>
+          <h1
+            className="font-[family-name:var(--font-serif)] text-[clamp(24px,4vw,36px)] font-black leading-[1.2] tracking-tight mb-2"
+            style={{ color: "var(--ink)" }}
+          >
+            이중과세 방지 — FTC & FEIE
+          </h1>
+          <p className="text-sm mb-8" style={{ color: "var(--ink-muted)" }}>
+            한국에서 낸 세금, 미국에서 또 내지 않는 방법
+          </p>
+
+          <SectionLabel>Saving Clause (조세조약 제한)</SectionLabel>
+          <Prose>
+            <p>
+              한미 조세조약에는 <strong>Saving Clause</strong>가 있어, 미국 시민권자·영주권자에게는 대부분의 조세조약 면세 혜택이 적용되지 않습니다.
+              대신, 이중과세를 방지하기 위해 <strong>FTC(외국납부세액공제)</strong>와 <strong>FEIE(해외근로소득공제)</strong> 제도를 활용합니다.
+            </p>
+          </Prose>
+
+          <Callout type="warn" label="Saving Clause">
+            한미 조세조약 Article 4(2): 미국 시민·영주권자에 대해서는 미국이 자국 세법에 따라 과세할 수 있습니다.
+            즉, 비자 소지자가 받는 면세 혜택(Article 20, 21 등)은 <strong>영주권자·시민권자에게는 적용되지 않습니다</strong>.
+          </Callout>
+
+          <SectionLabel>FTC — Foreign Tax Credit (Form 1116)</SectionLabel>
+          <div
+            className="my-6 p-5"
+            style={{ background: "var(--paper)", border: "1px solid var(--rule)", borderRadius: 2 }}
+          >
+            <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--accent)" }}>
+              외국납부세액공제
+            </p>
+            <p className="text-[14px] mb-3" style={{ color: "var(--ink-light)" }}>
+              한국에서 이미 납부한 세금을 미국 세금에서 <strong>공제(credit)</strong>받는 제도입니다.
+            </p>
+            <ul className="space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
+              <li className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                한국에서 납부한 소득세를 미국 세금에서 1:1로 차감
+              </li>
+              <li className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                공제 한도: 해당 소득에 대한 미국 세금액까지
+              </li>
+              <li className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                한국 납부 세금 증빙 필요 (홈택스 납세증명서)
+              </li>
+              <li className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                미사용 크레딧은 최대 10년 이월(carryover) 가능
+              </li>
+            </ul>
+          </div>
+
+          <SectionLabel>FEIE — Foreign Earned Income Exclusion (Form 2555)</SectionLabel>
+          <div
+            className="my-6 p-5"
+            style={{ background: "var(--paper)", border: "1px solid var(--rule)", borderRadius: 2 }}
+          >
+            <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--moss)" }}>
+              해외근로소득공제
+            </p>
+            <p className="text-[14px] mb-3" style={{ color: "var(--ink-light)" }}>
+              해외에서 번 근로소득을 미국 과세소득에서 <strong>제외(exclusion)</strong>하는 제도입니다.
+            </p>
+            <ul className="space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
+              <li className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                2025 과세연도 최대 공제: <strong>$130,000</strong>
+              </li>
+              <li className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                자격 조건: 해외에 Tax Home이 있어야 함
+              </li>
+              <li className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                Bona Fide Residence Test 또는 Physical Presence Test 충족 필요
+              </li>
+              <li className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                근로소득만 해당 (투자소득, 이자, 배당은 제외)
+              </li>
+            </ul>
+          </div>
+
+          <SectionLabel>FTC vs FEIE 비교</SectionLabel>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-px my-4 overflow-hidden"
+            style={{ background: "var(--rule)", borderRadius: 2 }}
+          >
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--accent)" }}>
+                FTC (Form 1116)
+              </p>
+              <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                <li>&bull; 한국 납부 세금을 미국 세금에서 공제</li>
+                <li>&bull; 모든 소득 유형에 적용 가능</li>
+                <li>&bull; 미사용분 이월 가능 (10년)</li>
+                <li>&bull; <strong>대부분의 경우 FTC가 더 유리</strong></li>
+              </ul>
+            </div>
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--moss)" }}>
+                FEIE (Form 2555)
+              </p>
+              <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                <li>&bull; 해외 근로소득을 과세 대상에서 제외</li>
+                <li>&bull; 근로소득만 해당 (투자소득 제외)</li>
+                <li>&bull; 해외 거주 요건 충족 필요</li>
+                <li>&bull; 한국에서 세금을 적게 낸 경우 유리할 수 있음</li>
+              </ul>
+            </div>
+          </div>
+
+          <Callout type="warn" label="FTC와 FEIE는 같은 소득에 중복 적용 불가">
+            같은 소득에 대해 FTC와 FEIE를 동시에 적용할 수 없습니다.
+            FEIE로 제외한 소득에 대해서는 FTC를 청구할 수 없으며, 반대도 마찬가지입니다.
+            <br /><br />
+            일반적으로 미국에 거주하면서 한국 소득이 있는 경우 <strong>FTC가 더 유리</strong>합니다.
+          </Callout>
+
+          <SectionLabel>한국 원천징수 상한 (조세조약)</SectionLabel>
+          <div
+            className="grid grid-cols-3 gap-px my-4 overflow-hidden"
+            style={{ background: "var(--rule)", borderRadius: 2 }}
+          >
+            {[
+              { type: "배당", rate: "15%", note: "Dividends" },
+              { type: "이자", rate: "12%", note: "Interest" },
+              { type: "로열티", rate: "15%", note: "Royalties" },
+            ].map((item) => (
+              <div key={item.type} className="text-center py-4 px-3" style={{ background: "var(--paper)" }}>
+                <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--ink-muted)" }}>
+                  {item.type}
+                </p>
+                <p className="font-[family-name:var(--font-serif)] text-[24px] font-black leading-none" style={{ color: "var(--accent)" }}>
+                  {item.rate}
+                </p>
+                <p className="text-[11px] mt-1" style={{ color: "var(--ink-faint)" }}>
+                  {item.note}
+                </p>
+              </div>
+            ))}
+          </div>
+          <Prose>
+            <p>
+              한미 조세조약에 따라 한국에서 원천징수하는 세율이 위와 같이 제한됩니다.
+              한국에서 원천징수된 세금은 FTC로 미국 세금에서 공제받을 수 있습니다.
+            </p>
+          </Prose>
+
+          <Callout type="info" label="Form 8833">
+            조세조약에 근거한 포지션을 주장하는 경우(예: Saving Clause 예외 적용),{" "}
+            <Code>Form 8833</Code>을 세금 신고서와 함께 제출해야 합니다.
+          </Callout>
+        </>
+      );
+    }
 
     return (
       <>
@@ -1570,6 +2075,7 @@ export default function TaxGuide() {
   function Step3() {
     if (!visa) return <VisaPrompt />;
 
+    const isResident = visaType === "green-card" || visaType === "citizen";
     const docs = visa.docs;
     const checkedCount = [...checkedDocs].filter((id) => docs.some((d) => d.id === id)).length;
     const totalCount = docs.length;
@@ -1661,31 +2167,50 @@ export default function TaxGuide() {
             W-2
           </T>
           를 발급합니다.
-          대학 소속이라면 Workday 등 시스템에서 전자 W-2를 다운로드할 수도 있습니다.
-          2월 중순까지 받지 못했다면 HR에 문의하세요.
+          {isResident
+            ? " 고용주의 HR 포탈 또는 ADP 등에서 전자 W-2를 다운로드할 수 있습니다. 2월 중순까지 받지 못했다면 HR에 문의하세요."
+            : " 대학 소속이라면 Workday 등 시스템에서 전자 W-2를 다운로드할 수도 있습니다. 2월 중순까지 받지 못했다면 HR에 문의하세요."}
         </Callout>
 
-        <Callout type="warn" label="SSN이 없는 경우">
-          <T tip="Individual Taxpayer Identification Number — SSN을 받을 수 없는 외국인에게 IRS가 발급하는 납세자 번호입니다.">ITIN</T>
-          으로 대체할 수 있습니다. <Code>Form W-7</Code>을 세금 신고서(1040-NR)와 함께 제출하면 ITIN을 신청할 수 있습니다.
-          <br /><br />
-          단, <strong>Form 8843은 SSN이나 ITIN이 없어도 제출 가능합니다.</strong> SSN/ITIN 란에 &ldquo;NRA — No SSN/ITIN&rdquo;이라고 기재하면 됩니다.
-        </Callout>
+        {isResident && (
+          <Callout type="tip" label="한국 소득 자료 준비">
+            <strong>홈택스(hometax.go.kr)</strong>에서 다음 서류를 발급받으세요:
+            <br /><br />
+            &bull; <strong>소득금액증명원</strong> — 한국 소득 내역 확인
+            <br />
+            &bull; <strong>납세증명서</strong> — FTC 신청 시 한국 납부 세금 증빙
+            <br />
+            &bull; <strong>원천징수영수증</strong> — 급여에서 원천징수된 세금 내역
+            <br /><br />
+            해외 금융계좌 합산 <strong>$10,000 초과</strong> 시 FBAR 신고, 일정 금액 이상이면 Form 8938(FATCA)도 필요합니다.
+          </Callout>
+        )}
 
-        <Callout type="tip" label="I-94 출력">
-          <ol className="list-decimal ml-4 space-y-1 mt-1">
-            <li>
-              <T tip="I-94: 미국 입출국 기록. 세관국경보호청(CBP) 웹사이트에서 온라인으로 조회/출력할 수 있습니다.">
-                CBP 웹사이트
-              </T>
-              (i94.cbp.dhs.gov) 접속
-            </li>
-            <li>&ldquo;Get Most Recent I-94&rdquo; 클릭</li>
-            <li>여권 정보 입력 후 조회</li>
-            <li>I-94 기록 출력 (PDF 저장 추천)</li>
-            <li><strong>Travel History</strong>도 함께 출력 (연도별 입출국 날짜 확인용)</li>
-          </ol>
-        </Callout>
+        {!isResident && (
+          <Callout type="warn" label="SSN이 없는 경우">
+            <T tip="Individual Taxpayer Identification Number — SSN을 받을 수 없는 외국인에게 IRS가 발급하는 납세자 번호입니다.">ITIN</T>
+            으로 대체할 수 있습니다. <Code>Form W-7</Code>을 세금 신고서(1040-NR)와 함께 제출하면 ITIN을 신청할 수 있습니다.
+            <br /><br />
+            단, <strong>Form 8843은 SSN이나 ITIN이 없어도 제출 가능합니다.</strong> SSN/ITIN 란에 &ldquo;NRA — No SSN/ITIN&rdquo;이라고 기재하면 됩니다.
+          </Callout>
+        )}
+
+        {!isResident && (
+          <Callout type="tip" label="I-94 출력">
+            <ol className="list-decimal ml-4 space-y-1 mt-1">
+              <li>
+                <T tip="I-94: 미국 입출국 기록. 세관국경보호청(CBP) 웹사이트에서 온라인으로 조회/출력할 수 있습니다.">
+                  CBP 웹사이트
+                </T>
+                (i94.cbp.dhs.gov) 접속
+              </li>
+              <li>&ldquo;Get Most Recent I-94&rdquo; 클릭</li>
+              <li>여권 정보 입력 후 조회</li>
+              <li>I-94 기록 출력 (PDF 저장 추천)</li>
+              <li><strong>Travel History</strong>도 함께 출력 (연도별 입출국 날짜 확인용)</li>
+            </ol>
+          </Callout>
+        )}
 
         {visaType === "dependent" && (
           <Callout type="info" label="동반비자 서류 참고">
@@ -1705,9 +2230,247 @@ export default function TaxGuide() {
   function Step4() {
     if (!visa) return <VisaPrompt />;
 
+    const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
     const isDependent = visaType === "dependent";
     const isF1 = visaType === "f1-student";
+
+    if (isResident) {
+      return (
+        <>
+          <h1
+            className="font-[family-name:var(--font-serif)] text-[clamp(24px,4vw,36px)] font-black leading-[1.2] tracking-tight mb-2"
+            style={{ color: "var(--ink)" }}
+          >
+            연방세 신고
+          </h1>
+          <p className="text-sm mb-8" style={{ color: "var(--ink-muted)" }}>
+            <T tip="Internal Revenue Service — 미국 국세청.">IRS</T>에 제출하는 Federal Tax — 전세계 소득 신고
+          </p>
+
+          <SectionLabel>01 — Form 1040 기본</SectionLabel>
+          <Prose>
+            <p>
+              {visaType === "citizen" ? "시민권자" : "영주권자"}는{" "}
+              <Code>Form 1040</Code>을 사용하여 연방 소득세를 신고합니다.
+              미국 시민과 동일한 절차입니다.
+            </p>
+          </Prose>
+          <ul className="mt-3 space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
+            {[
+              "Filing Status에 따른 Standard Deduction 적용",
+              "전 세계 소득(Worldwide Income)에 대해 과세",
+              "FICA(Social Security + Medicare) 원천징수 대상",
+              "W-2, 1099 등 미국 소득 서류 + 한국 소득 자료 기반으로 작성",
+            ].map((item, i) => (
+              <li key={i} className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <SectionLabel>02 — 전세계 소득 (Worldwide Income)</SectionLabel>
+          <Callout type="warn" label="전세계 소득 신고 의무">
+            미국 거주자는 <strong>전 세계에서 발생한 모든 소득</strong>을 신고해야 합니다.
+            한국에서 발생한 소득도 반드시 포함해야 합니다.
+          </Callout>
+          <ul className="mt-3 space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
+            {[
+              "한국 근로소득 (급여, 사업소득)",
+              "한국 은행 이자, 배당금",
+              "한국 부동산 임대 소득, 양도 소득",
+              "한국 연금 소득",
+              "기타 전 세계 소득 (투자 수익 등)",
+            ].map((item, i) => (
+              <li key={i} className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <Callout type="info" label="환율 변환">
+            한국 원화 소득은 <strong>IRS 공식 연평균 환율</strong>로 미국 달러로 변환하여 신고합니다.
+            IRS 웹사이트에서 &ldquo;Yearly Average Currency Exchange Rates&rdquo;를 검색하세요.
+          </Callout>
+
+          <SectionLabel>03 — FEIE vs FTC 선택 가이드</SectionLabel>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-px my-4 overflow-hidden"
+            style={{ background: "var(--rule)", borderRadius: 2 }}
+          >
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--accent)" }}>
+                FTC 추천 (대부분)
+              </p>
+              <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                <li>&bull; 미국에 거주하면서 한국 소득이 있는 경우</li>
+                <li>&bull; 한국에서 세금을 납부한 경우</li>
+                <li>&bull; 투자소득(이자/배당)이 있는 경우</li>
+                <li>&bull; Form 1116 제출</li>
+              </ul>
+            </div>
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--moss)" }}>
+                FEIE 고려
+              </p>
+              <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                <li>&bull; 한국에 거주하며 근로소득이 있는 경우</li>
+                <li>&bull; 한국 세율이 미국보다 낮은 경우</li>
+                <li>&bull; 해외 거주 요건(Physical Presence) 충족 시</li>
+                <li>&bull; Form 2555 제출</li>
+              </ul>
+            </div>
+          </div>
+          <Callout type="warn" label="중복 적용 불가">
+            같은 소득에 대해 FTC와 FEIE를 동시에 적용할 수 없습니다.
+            한번 FEIE를 선택하면 취소 후 5년간 다시 선택할 수 없으므로 신중하게 결정하세요.
+          </Callout>
+
+          <SectionLabel>04 — 해외계좌 보고</SectionLabel>
+          <Prose>
+            <p>
+              한국에 금융계좌가 있는 영주권자·시민권자는 <strong>해외계좌 보고 의무</strong>가 있습니다.
+              Form 1040의 <Code>Schedule B Part III</Code>에서 해외 금융계좌 보유 여부를 답변해야 합니다.
+            </p>
+          </Prose>
+
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-px my-6 overflow-hidden"
+            style={{ background: "var(--rule)", borderRadius: 2 }}
+          >
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--accent)" }}>
+                FBAR (FinCEN 114)
+              </p>
+              <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                <li>&bull; 해외 금융계좌 합산 <strong>$10,000 초과</strong> 시</li>
+                <li>&bull; 마감: 4/15 (자동 연장 10/15)</li>
+                <li>&bull; BSA E-Filing 시스템으로 전자 제출</li>
+                <li>&bull; IRS가 아닌 <strong>FinCEN</strong>에 제출</li>
+                <li>&bull; 미제출 벌금: 건당 $10,000+</li>
+              </ul>
+            </div>
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--moss)" }}>
+                Form 8938 (FATCA)
+              </p>
+              <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                <li>&bull; 해외 금융자산이 threshold 초과 시</li>
+                <li>&bull; 세금 신고서(1040)와 함께 IRS에 제출</li>
+                <li>&bull; 금융계좌 + 주식, 보험, 연금 등 포함</li>
+                <li>&bull; 미제출 벌금: $10,000+</li>
+              </ul>
+            </div>
+          </div>
+
+          <Callout type="info" label="Form 8938 Threshold">
+            <strong>미국 내 거주:</strong> 미혼 $50,000(연말)/$75,000(연중), 부부 공동 $100,000/$150,000
+            <br />
+            <strong>해외 거주:</strong> 미혼 $200,000(연말)/$300,000(연중), 부부 공동 $400,000/$600,000
+          </Callout>
+
+          <div
+            className="my-6 p-5"
+            style={{ background: "var(--paper)", border: "1px solid var(--rule)", borderRadius: 2 }}
+          >
+            <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--ink-muted)" }}>
+              FBAR vs Form 8938 비교
+            </p>
+            <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+              {[
+                { item: "제출 대상", fbar: "FinCEN (재무부)", f8938: "IRS (국세청)" },
+                { item: "Threshold", fbar: "$10,000 (합산)", f8938: "$50,000+ (거주지별)" },
+                { item: "제출 방법", fbar: "BSA E-Filing (온라인)", f8938: "1040과 함께 제출" },
+                { item: "대상 자산", fbar: "금융계좌만", f8938: "금융계좌 + 기타 금융자산" },
+                { item: "마감일", fbar: "4/15 (자동연장 10/15)", f8938: "세금 신고 마감일과 동일" },
+              ].map((row) => (
+                <div key={row.item} className="grid grid-cols-3 gap-2 py-2.5 text-[12.5px]" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                  <span className="font-medium" style={{ color: "var(--ink)" }}>{row.item}</span>
+                  <span style={{ color: "var(--ink-muted)" }}>{row.fbar}</span>
+                  <span style={{ color: "var(--ink-muted)" }}>{row.f8938}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <SectionLabel>05 — 고난도 폼 (CPA 권장)</SectionLabel>
+          <Callout type="warn" label="전문가 도움 필요">
+            아래 양식은 매우 복잡하며, 미제출 시 <strong>건당 $10,000 이상</strong>의 벌금이 부과될 수 있습니다.
+            해당되는 경우 반드시 <strong>국제 세무 경험이 있는 CPA</strong>와 상담하세요.
+          </Callout>
+          <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+            {[
+              { form: "Form 3520", desc: "해외 증여/상속 $100,000 이상 수령 시 보고", penalty: "최대 미보고 금액의 25%" },
+              { form: "Form 8621", desc: "PFIC (Passive Foreign Investment Company) 보고 — 한국 펀드, ETF 해당", penalty: "과세 + 이자 벌금" },
+              { form: "Form 5471", desc: "외국법인(한국 법인) 지분 10% 이상 보유 시", penalty: "$10,000/건" },
+              { form: "Form 8865", desc: "외국 파트너십 보유 시", penalty: "$10,000/건" },
+              { form: "Form 8858", desc: "해외 disregarded entity 보유 시", penalty: "$10,000/건" },
+              { form: "Form 3520-A", desc: "외국 신탁(trust)의 연례 보고", penalty: "$10,000 또는 신탁 자산의 5%" },
+            ].map((item) => (
+              <div
+                key={item.form}
+                className="py-3.5"
+                style={{ borderBottom: "1px solid var(--rule-light)" }}
+              >
+                <div className="flex items-baseline gap-3 mb-1">
+                  <Code>{item.form}</Code>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>{item.desc}</span>
+                </div>
+                <p className="text-[12.5px] ml-[4px]" style={{ color: "var(--accent)" }}>
+                  벌금: {item.penalty}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <Callout type="info" label="한국 펀드/ETF = PFIC">
+            한국에서 가입한 펀드나 ETF는 미국 세법상 <strong>PFIC(Passive Foreign Investment Company)</strong>로 분류됩니다.
+            PFIC는 매우 불리한 과세 방식이 적용되므로, 한국 펀드를 보유한 경우 반드시 CPA와 상담하세요.
+          </Callout>
+
+          <SectionLabel>06 — 작성 도구</SectionLabel>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-3 gap-px my-4 overflow-hidden"
+            style={{ background: "var(--rule)", borderRadius: 2 }}
+          >
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-bold text-[14px] mb-3" style={{ color: "var(--ink)" }}>TurboTax</p>
+              <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                <li>&bull; 무료~유료 버전</li>
+                <li>&bull; 연방세 + 주세</li>
+                <li>&bull; e-file 지원</li>
+                <li>&bull; 해외소득 지원 (유료)</li>
+              </ul>
+            </div>
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-bold text-[14px] mb-3" style={{ color: "var(--ink)" }}>H&R Block</p>
+              <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                <li>&bull; 온라인 + 오프라인</li>
+                <li>&bull; 연방세 + 주세</li>
+                <li>&bull; e-file 지원</li>
+                <li>&bull; 세무사 상담 가능</li>
+              </ul>
+            </div>
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-bold text-[14px] mb-3" style={{ color: "var(--ink)" }}>FreeTaxUSA</p>
+              <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                <li>&bull; 연방세 무료</li>
+                <li>&bull; 주세 ~$15</li>
+                <li>&bull; e-file 지원</li>
+                <li>&bull; 간단한 신고에 적합</li>
+              </ul>
+            </div>
+          </div>
+
+          <Callout type="tip" label="팁">
+            해외 소득, FBAR/FATCA, PFIC 등이 있는 경우 소프트웨어만으로는 한계가 있을 수 있습니다.
+            복잡한 경우 국제 세무 전문 CPA 상담을 추천합니다.
+          </Callout>
+        </>
+      );
+    }
 
     return (
       <>
@@ -2075,6 +2838,8 @@ export default function TaxGuide() {
      ============================================================== */
 
   function Step5() {
+    const isResident = visaType === "green-card" || visaType === "citizen";
+
     return (
       <>
         <h1
@@ -2130,8 +2895,8 @@ export default function TaxGuide() {
         <ul className="space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
           {[
             "각 주마다 양식과 절차가 다름",
-            visaType === "h1b"
-              ? "RA: TurboTax, H&R Block 등에서 주세도 함께 작성 가능"
+            isResident || visaType === "h1b"
+              ? "TurboTax, H&R Block, FreeTaxUSA 등에서 주세도 함께 작성 가능"
               : "NRA: Sprintax 사용 추천 (자동으로 해당 주 양식 작성, ~$25-35)",
             "직접 작성 시: 거주 주의 Department of Revenue 웹사이트에서 양식 다운로드",
             "여러 주에서 일한 경우 각 주에 별도로 신고해야 함",
@@ -2143,18 +2908,24 @@ export default function TaxGuide() {
           ))}
         </ul>
 
-        <Callout type="info" label="조세조약 + 주세">
-          대부분의 주에서 한미 조세조약의 면세 혜택이 주세에도 적용됩니다.
-          {visaType === "h1b"
-            ? " H-1B RA의 경우 주세에서는 일반적인 Standard Deduction이 적용됩니다."
-            : " Sprintax를 사용하면 이를 자동으로 처리해 줍니다."}
-        </Callout>
+        {isResident ? (
+          <Callout type="info" label="주세 Standard Deduction">
+            주마다 Standard Deduction 금액이 다릅니다. 세금 소프트웨어를 사용하면 자동으로 적용됩니다.
+          </Callout>
+        ) : (
+          <Callout type="info" label="조세조약 + 주세">
+            대부분의 주에서 한미 조세조약의 면세 혜택이 주세에도 적용됩니다.
+            {visaType === "h1b"
+              ? " H-1B RA의 경우 주세에서는 일반적인 Standard Deduction이 적용됩니다."
+              : " Sprintax를 사용하면 이를 자동으로 처리해 줍니다."}
+          </Callout>
+        )}
 
-        <SectionLabel>{visaType === "h1b" ? "주세 신고 방법" : "Sprintax로 주세 신고하기"}</SectionLabel>
+        <SectionLabel>{isResident || visaType === "h1b" ? "주세 신고 방법" : "Sprintax로 주세 신고하기"}</SectionLabel>
         <div className="space-y-3">
-          {(visaType === "h1b"
+          {(isResident || visaType === "h1b"
             ? [
-                "TurboTax 또는 H&R Block에서 연방세와 함께 작성",
+                "TurboTax, H&R Block, 또는 FreeTaxUSA에서 연방세와 함께 작성",
                 "주세 양식이 자동으로 생성됨",
                 "e-file로 연방세와 함께 제출 가능",
                 "일부 주는 별도 제출 필요 — 소프트웨어 안내 참조",
@@ -2194,6 +2965,94 @@ export default function TaxGuide() {
      ============================================================== */
 
   function Step6() {
+    const isResident = visaType === "green-card" || visaType === "citizen";
+
+    if (isResident) {
+      return (
+        <>
+          <h1
+            className="font-[family-name:var(--font-serif)] text-[clamp(24px,4vw,36px)] font-black leading-[1.2] tracking-tight mb-2"
+            style={{ color: "var(--ink)" }}
+          >
+            서류 제출 방법
+          </h1>
+          <p className="text-sm mb-8" style={{ color: "var(--ink-muted)" }}>
+            작성한 세금 서류, 어디로 어떻게 보내나
+          </p>
+
+          <Callout type="tip" label="e-file 추천">
+            {visaType === "citizen" ? "시민권자" : "영주권자"}는 TurboTax, H&R Block, FreeTaxUSA 등에서{" "}
+            <strong>e-file</strong>로 바로 제출할 수 있습니다.
+            우편 발송이 필요 없어 가장 빠르고 안전합니다.
+          </Callout>
+
+          <SectionLabel>e-file (전자 제출)</SectionLabel>
+          <Prose>
+            <p>
+              세금 소프트웨어에서 작성을 완료하면 바로 전자 제출(e-file)할 수 있습니다.
+              NRA와 달리 우편 제출이 기본이 아니며, <strong>e-file이 가장 빠르고 안전한 방법</strong>입니다.
+            </p>
+          </Prose>
+          <ul className="mt-3 space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
+            {[
+              "소프트웨어에서 '파일' 또는 'Submit' 클릭",
+              "24시간 내 IRS 접수 확인",
+              "환급 시 2~3주 내 입금 (Direct Deposit)",
+              "주세도 e-file 가능 (대부분의 주)",
+            ].map((item, i) => (
+              <li key={i} className="flex items-baseline gap-3">
+                <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <SectionLabel>우편 제출이 필요한 경우</SectionLabel>
+          <Prose>
+            <p>
+              일부 상황에서는 우편 제출이 필요할 수 있습니다 (예: 특정 양식 첨부, ITIN 신청 등).
+            </p>
+          </Prose>
+          <div
+            className="grid grid-cols-1 gap-px my-4 overflow-hidden"
+            style={{ background: "var(--rule)", borderRadius: 2 }}
+          >
+            <div className="p-5" style={{ background: "var(--paper)" }}>
+              <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--ink-muted)" }}>
+                Form 1040 우편 주소
+              </p>
+              <p className="text-[13px]" style={{ color: "var(--ink-muted)" }}>
+                거주 주에 따라 IRS 우편 주소가 다릅니다. IRS 웹사이트에서 &ldquo;Where to File Paper Tax Returns&rdquo;를 검색하여 확인하세요.
+              </p>
+            </div>
+          </div>
+
+          <SectionLabel>제출 전 최종 체크</SectionLabel>
+          <div className="space-y-2">
+            {[
+              "모든 양식에 서명했는지 확인",
+              "W-2, 1099 등 필요 서류 확인",
+              "FBAR는 BSA E-Filing으로 별도 제출",
+              "Form 8938은 1040과 함께 제출",
+              "모든 서류의 사본 보관 (최소 3년, 가급적 7년)",
+            ].map((item, i) => (
+              <div key={i} className="flex gap-3 items-baseline text-[14px]">
+                <span className="font-[family-name:var(--font-mono)] text-[11px] font-bold" style={{ color: "var(--ink-faint)" }}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span style={{ color: "var(--ink-light)" }}>{item}</span>
+              </div>
+            ))}
+          </div>
+
+          <Callout type="info" label="FBAR 별도 제출">
+            FBAR(FinCEN 114)는 세금 신고서와 <strong>별도로</strong> BSA E-Filing 시스템에서 전자 제출합니다.
+            IRS에 보내는 것이 아닙니다.
+          </Callout>
+        </>
+      );
+    }
+
     return (
       <>
         <h1
@@ -2391,6 +3250,7 @@ export default function TaxGuide() {
      ============================================================== */
 
   function Step7() {
+    const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
 
     return (
@@ -2436,13 +3296,13 @@ export default function TaxGuide() {
               <T tip="Filing Status — 세금 신고 시의 납세자 상태 (Single, Married 등).">
                 Filing Status
               </T>
-              {" "}({isH1B ? "세금 소프트웨어" : "Sprintax"} 서류에서 확인)
+              {" "}({isResident || isH1B ? "세금 소프트웨어" : "Sprintax"} 서류에서 확인)
             </li>
             <li>&bull;{" "}
               <T tip="Refund Amount — 환급 예상 금액.">
                 Refund Amount
               </T>
-              {" "}({isH1B ? "세금 소프트웨어" : "Sprintax"} 서류에서 확인)
+              {" "}({isResident || isH1B ? "세금 소프트웨어" : "Sprintax"} 서류에서 확인)
             </li>
           </ul>
         </div>
@@ -2512,47 +3372,72 @@ export default function TaxGuide() {
           </li>
         </ul>
 
-        <SectionLabel>자주 하는 실수 5가지</SectionLabel>
+        <SectionLabel>자주 하는 실수</SectionLabel>
         <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
           {[
-            ...(isH1B
+            ...(isResident
               ? [
                   {
-                    mistake: "H-1B RA인데 NRA 소프트웨어(Sprintax)로 신고",
-                    fix: "RA는 TurboTax, H&R Block 등 일반 소프트웨어 사용",
-                  },
-                  {
                     mistake: "Worldwide Income 미신고",
-                    fix: "RA는 전 세계 소득을 신고해야 합니다 (한국 소득 포함)",
+                    fix: "전 세계 소득(한국 소득 포함)을 모두 신고해야 합니다",
                   },
                   {
-                    mistake: "FICA 환급 잘못 신청",
-                    fix: "H-1B는 FICA 면제 대상이 아닙니다 — 잘못 신청하면 문제 발생",
+                    mistake: "FBAR 미제출",
+                    fix: "해외 금융계좌 합산 $10,000 초과 시 반드시 제출 — 벌금 $10,000+",
+                  },
+                  {
+                    mistake: "Form 8938 (FATCA) 미제출",
+                    fix: "해외 금융자산이 threshold 초과 시 1040과 함께 제출 필수",
+                  },
+                  {
+                    mistake: "PFIC 보고 누락",
+                    fix: "한국 펀드/ETF는 PFIC — Form 8621 미제출 시 벌금 + 불리한 과세",
+                  },
+                  {
+                    mistake: "FTC/FEIE 중복 적용",
+                    fix: "같은 소득에 FTC와 FEIE를 동시에 적용할 수 없습니다",
                   },
                 ]
-              : [
-                  {
-                    mistake: "NRA인데 TurboTax로 신고",
-                    fix: "NRA는 반드시 Sprintax 또는 GLACIER Tax Prep 사용",
-                  },
-                  {
-                    mistake: "Form 8843 제출 누락",
-                    fix: "소득이 없어도 NRA라면 반드시 제출 (배우자/자녀도 각각)",
-                  },
-                  {
-                    mistake: "조세조약 혜택 미청구",
-                    fix: `1040-NR에서 Treaty ${visa ? visa.treatyArticle : ""} 혜택 반드시 기입`,
-                  },
-                ]
+              : isH1B
+                ? [
+                    {
+                      mistake: "H-1B RA인데 NRA 소프트웨어(Sprintax)로 신고",
+                      fix: "RA는 TurboTax, H&R Block 등 일반 소프트웨어 사용",
+                    },
+                    {
+                      mistake: "Worldwide Income 미신고",
+                      fix: "RA는 전 세계 소득을 신고해야 합니다 (한국 소득 포함)",
+                    },
+                    {
+                      mistake: "FICA 환급 잘못 신청",
+                      fix: "H-1B는 FICA 면제 대상이 아닙니다 — 잘못 신청하면 문제 발생",
+                    },
+                  ]
+                : [
+                    {
+                      mistake: "NRA인데 TurboTax로 신고",
+                      fix: "NRA는 반드시 Sprintax 또는 GLACIER Tax Prep 사용",
+                    },
+                    {
+                      mistake: "Form 8843 제출 누락",
+                      fix: "소득이 없어도 NRA라면 반드시 제출 (배우자/자녀도 각각)",
+                    },
+                    {
+                      mistake: "조세조약 혜택 미청구",
+                      fix: `1040-NR에서 Treaty ${visa ? visa.treatyArticle : ""} 혜택 반드시 기입`,
+                    },
+                  ]
             ),
-            {
-              mistake: "연방세와 주세를 같은 봉투로 발송",
-              fix: "반드시 별도 봉투, 별도 주소로 각각 발송",
-            },
-            {
-              mistake: "UPS/FedEx로 IRS에 발송",
-              fix: "IRS 주소는 P.O. Box — USPS만 배달 가능",
-            },
+            ...(!isResident ? [
+              {
+                mistake: "연방세와 주세를 같은 봉투로 발송",
+                fix: "반드시 별도 봉투, 별도 주소로 각각 발송",
+              },
+              {
+                mistake: "UPS/FedEx로 IRS에 발송",
+                fix: "IRS 주소는 P.O. Box — USPS만 배달 가능",
+              },
+            ] : []),
           ].map((item, i) => (
             <div
               key={i}
@@ -2592,6 +3477,32 @@ export default function TaxGuide() {
           IRS는 <strong>절대로</strong> 전화, 이메일, 문자로 기프트카드 구매나 송금을 요구하지 않습니다.
           의심되는 연락을 받으면 무시하고, 개인정보(SSN, 은행정보)를 모르는 사람에게 절대 제공하지 마세요.
         </Callout>
+
+        {/* Resident reference links */}
+        {isResident && (
+          <>
+            <SectionLabel>참고 링크 모음</SectionLabel>
+            <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+              {RESIDENT_REFERENCE_LINKS.map((link) => (
+                <a
+                  key={link.url}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col gap-0.5 py-3 transition-colors"
+                  style={{ borderBottom: "1px solid var(--rule-light)", textDecoration: "none" }}
+                >
+                  <span className="text-[14px] font-medium" style={{ color: "var(--accent)" }}>
+                    {link.label}
+                  </span>
+                  <span className="text-[12px]" style={{ color: "var(--ink-faint)" }}>
+                    {link.desc}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Completion */}
         <div
@@ -2664,10 +3575,10 @@ export default function TaxGuide() {
           className="font-[family-name:var(--font-serif)] text-[clamp(20px,3.5vw,28px)] font-black mb-4"
           style={{ color: "var(--ink)" }}
         >
-          먼저 비자를 선택해 주세요
+          먼저 비자 또는 신분을 선택해 주세요
         </p>
         <p className="text-[15px] mb-6" style={{ color: "var(--ink-muted)" }}>
-          Step 01에서 본인의 비자 유형을 선택하면
+          Step 01에서 본인의 비자 또는 신분을 선택하면
           <br />
           맞춤형 가이드가 표시됩니다.
         </p>
