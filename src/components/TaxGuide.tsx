@@ -1378,7 +1378,7 @@ export default function TaxGuide() {
           <Callout type="tip" label="항상 거주자">
             {visaType === "citizen"
               ? "미국 시민권자는 세법상 항상 거주자(Resident)입니다. NRA/RA 판단(Substantial Presence Test)이 필요 없습니다."
-              : "영주권(Green Card) 소지자는 세법상 항상 거주자(Resident)입니다. Green Card Test에 의해 영주권을 취득한 첫해부터 RA로 분류됩니다."}
+              : <>영주권(Green Card) 소지자는 세법상 항상 거주자(Resident)입니다. <T tip="Green Card Test — 영주권을 소유하고 있다면 체류일수와 관계없이 자동으로 세법상 거주자(RA)로 분류되는 테스트.">Green Card Test</T>에 의해 영주권을 취득한 첫해부터 RA로 분류됩니다.</>}
           </Callout>
 
           <Prose>
@@ -1392,7 +1392,7 @@ export default function TaxGuide() {
           <SectionLabel>Filing Status (신고 유형)</SectionLabel>
           <Prose>
             <p className="mb-4">
-              Form 1040 작성 시 본인의 Filing Status를 선택해야 합니다. Filing Status에 따라 세율과 Standard Deduction이 달라집니다:
+              Form 1040 작성 시 본인의 <T tip="Filing Status — 세금 신고 시 선택하는 납세자 상태. Single(미혼), MFJ(부부 공동), MFS(부부 별도), HoH(세대주) 등이 있으며, 이에 따라 세율과 공제 금액이 달라집니다.">Filing Status</T>를 선택해야 합니다. Filing Status에 따라 세율과 <T tip="Standard Deduction — 소득에서 자동으로 차감되는 기본 공제액. 별도의 증빙 없이 일정 금액을 공제받을 수 있습니다. 2025년 Single 기준 $15,700.">Standard Deduction</T>이 달라집니다:
             </p>
           </Prose>
           <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
@@ -1437,10 +1437,10 @@ export default function TaxGuide() {
           </div>
 
           <Callout type="info" label="MFJ가 일반적으로 유리">
-            부부가 모두 거주자인 경우 <strong>Married Filing Jointly (MFJ)</strong>가 일반적으로 가장 유리합니다.
+            부부가 모두 거주자인 경우 <strong><T tip="Married Filing Jointly — 부부가 소득을 합산하여 공동으로 신고하는 방식. 세율 구간이 넓고 Standard Deduction이 커서 대부분의 부부에게 유리합니다.">MFJ</T></strong>가 일반적으로 가장 유리합니다.
             Standard Deduction이 가장 크고, 세율 구간도 넓어 세금이 줄어듭니다.
             <br /><br />
-            단, 배우자가 NRA인 경우에는 MFJ를 선택하면 배우자도 전 세계 소득을 신고해야 합니다.
+            단, 배우자가 <T tip="Non-Resident Alien — 미국 세법상 비거주 외국인.">NRA</T>인 경우에는 MFJ를 선택하면 배우자도 <T tip="Worldwide Income — 미국뿐 아니라 전 세계에서 발생한 모든 소득. 거주자·시민권자는 전세계 소득을 미국에 신고해야 합니다.">전 세계 소득</T>을 신고해야 합니다.
           </Callout>
         </>
       );
@@ -1579,7 +1579,7 @@ export default function TaxGuide() {
             >
               <div className="p-5" style={{ background: "var(--paper)" }}>
                 <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--accent)" }}>
-                  Option A — Dual Status
+                  Option A — <T tip="Dual-Status — 같은 과세연도 안에서 일부는 NRA, 일부는 RA로 신분이 나뉘는 경우. 각 기간에 맞는 세법이 별도로 적용됩니다.">Dual Status</T>
                 </p>
                 <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
                   해당 연도를 NRA 기간 + RA 기간으로 나눠 각각 신고
@@ -1590,13 +1590,13 @@ export default function TaxGuide() {
               </div>
               <div className="p-5" style={{ background: "var(--paper)" }}>
                 <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--moss)" }}>
-                  Option B — First-Year Choice
+                  Option B — <T tip="First-Year Choice Election — H-1B 첫 해에 일부 기간만 체류한 경우, 도착일부터 RA(거주자)로 취급해달라고 선택할 수 있는 제도입니다.">First-Year Choice</T>
                 </p>
                 <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
                   도착일부터 RA로 취급해달라고 선택 (배우자 공동 신고 가능)
                 </p>
                 <p className="text-[12.5px] mt-1" style={{ color: "var(--ink-faint)" }}>
-                  Standard Deduction 활용 가능
+                  <T tip="Standard Deduction — 소득에서 자동 차감되는 기본 공제액. RA만 적용 가능합니다.">Standard Deduction</T> 활용 가능
                 </p>
               </div>
             </div>
@@ -1758,8 +1758,8 @@ export default function TaxGuide() {
           <SectionLabel>Saving Clause (조세조약 제한)</SectionLabel>
           <Prose>
             <p>
-              한미 조세조약에는 <strong>Saving Clause</strong>가 있어, 미국 시민권자·영주권자에게는 대부분의 조세조약 면세 혜택이 적용되지 않습니다.
-              대신, 이중과세를 방지하기 위해 <strong>FTC(외국납부세액공제)</strong>와 <strong>FEIE(해외근로소득공제)</strong> 제도를 활용합니다.
+              한미 조세조약에는 <strong><T tip="Saving Clause — 조세조약에 포함된 조항으로, 미국이 자국 시민·영주권자에 대해서는 조약과 관계없이 자국 세법에 따라 과세할 수 있도록 허용합니다.">Saving Clause</T></strong>가 있어, 미국 시민권자·영주권자에게는 대부분의 조세조약 면세 혜택이 적용되지 않습니다.
+              대신, 이중과세를 방지하기 위해 <strong><T tip="Foreign Tax Credit — 외국에서 납부한 세금을 미국 세금에서 공제받는 제도. Form 1116으로 신청합니다.">FTC</T>(외국납부세액공제)</strong>와 <strong><T tip="Foreign Earned Income Exclusion — 해외에서 번 근로소득을 미국 과세 소득에서 제외하는 제도. 2025년 최대 $130,000. Form 2555로 신청합니다.">FEIE</T>(해외근로소득공제)</strong> 제도를 활용합니다.
             </p>
           </Prose>
 
@@ -1817,11 +1817,11 @@ export default function TaxGuide() {
               </li>
               <li className="flex items-baseline gap-3">
                 <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
-                자격 조건: 해외에 Tax Home이 있어야 함
+                자격 조건: 해외에 <T tip="Tax Home — 주된 사업장 또는 근무지가 있는 곳. FEIE를 받으려면 Tax Home이 미국 밖에 있어야 합니다.">Tax Home</T>이 있어야 함
               </li>
               <li className="flex items-baseline gap-3">
                 <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
-                Bona Fide Residence Test 또는 Physical Presence Test 충족 필요
+                <T tip="Bona Fide Residence Test — 해외에 1 과세연도 이상 '진정한 거주자'로 거주했음을 증명하는 테스트.">Bona Fide Residence Test</T> 또는 <T tip="Physical Presence Test — 연속 12개월 중 330일 이상 해외에 물리적으로 체류했는지 확인하는 테스트.">Physical Presence Test</T> 충족 필요
               </li>
               <li className="flex items-baseline gap-3">
                 <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
@@ -1973,17 +1973,17 @@ export default function TaxGuide() {
             </div>
 
             <Callout type="info" label="H-1B RA — Standard Deduction">
-              H-1B로 RA인 경우, 미국 시민과 동일하게 <strong>Standard Deduction($14,600, 2024 기준 Single)</strong>을 적용받습니다.
+              H-1B로 RA인 경우, 미국 시민과 동일하게 <strong><T tip="Standard Deduction — 과세소득에서 자동 차감되는 기본 공제액. 별도 증빙 없이 적용됩니다.">Standard Deduction</T>($14,600, 2024 기준 Single)</strong>을 적용받습니다.
               <br /><br />
-              또한 RA는 <strong>전 세계 소득(Worldwide Income)</strong>에 대해 과세됩니다. 한국의 소득이 있다면 함께 신고해야 합니다.
+              또한 RA는 <strong><T tip="Worldwide Income — 미국뿐 아니라 전 세계에서 발생한 모든 소득. 한국 급여, 이자, 배당, 임대소득 등을 모두 포함합니다.">전 세계 소득(Worldwide Income)</T></strong>에 대해 과세됩니다. 한국의 소득이 있다면 함께 신고해야 합니다.
               단, <T tip="Foreign Tax Credit — 외국에서 납부한 세금을 미국 세금에서 공제받는 제도. 이중과세를 방지합니다.">Foreign Tax Credit</T>으로 이중과세를 방지할 수 있습니다.
             </Callout>
 
             <SectionLabel>FICA (Social Security + Medicare)</SectionLabel>
             <Callout type="warn" label="H-1B는 FICA 면제 대상이 아닙니다">
-              H-1B 소지자는 NRA든 RA든 <strong>FICA 세금(Social Security 6.2% + Medicare 1.45%)을 납부</strong>해야 합니다.
+              H-1B 소지자는 NRA든 RA든 <strong><T tip="Federal Insurance Contributions Act — 사회보장세(Social Security 6.2%)와 메디케어세(Medicare 1.45%)를 합친 세금. 급여에서 자동으로 원천징수됩니다.">FICA</T> 세금(Social Security 6.2% + Medicare 1.45%)을 납부</strong>해야 합니다.
               <br /><br />
-              이는 F-1, J-1과의 중요한 차이점입니다. W-2에서 FICA가 원천징수됩니다.
+              이는 F-1, J-1과의 중요한 차이점입니다. <T tip="W-2 — 고용주가 발급하는 연간 급여 소득 및 원천징수 내역서. 매년 1~2월에 발급됩니다.">W-2</T>에서 FICA가 <T tip="원천징수(Withholding) — 고용주가 급여에서 세금을 미리 공제하여 IRS에 납부하는 것.">원천징수</T>됩니다.
             </Callout>
           </>
         ) : (
@@ -2282,7 +2282,7 @@ export default function TaxGuide() {
             <br />
             &bull; <strong>원천징수영수증</strong> — 급여에서 원천징수된 세금 내역
             <br /><br />
-            해외 금융계좌 합산 <strong>$10,000 초과</strong> 시 FBAR 신고, 일정 금액 이상이면 Form 8938(FATCA)도 필요합니다.
+            해외 금융계좌 합산 <strong>$10,000 초과</strong> 시 <T tip="FBAR (FinCEN 114) — 해외 금융계좌 합산 $10,000 초과 시 미국 재무부에 보고하는 양식. 세금 신고서와는 별도로 제출합니다.">FBAR</T> 신고, 일정 금액 이상이면 <T tip="Form 8938 (FATCA) — Foreign Account Tax Compliance Act에 따라 해외 금융자산을 IRS에 보고하는 양식. 세금 신고서와 함께 제출합니다.">Form 8938(FATCA)</T>도 필요합니다.
           </Callout>
         )}
 
@@ -2314,9 +2314,9 @@ export default function TaxGuide() {
 
         {visaType === "dependent" && (
           <Callout type="info" label="동반비자 서류 참고">
-            주비자 소지자의 비자 서류(DS-2019, I-20 등) 사본이 필요합니다.
+            주비자 소지자의 비자 서류(<T tip="DS-2019 — J-1 비자 스폰서 기관이 발급하는 교환방문 프로그램 참가 확인 서류.">DS-2019</T>, <T tip="I-20 — F-1 학생의 입학허가를 증명하는 서류. 학교(SEVP 인증 기관)에서 발급합니다.">I-20</T> 등) 사본이 필요합니다.
             <br /><br />
-            EAD(Employment Authorization Document)로 취업한 경우, EAD 사본과 W-2도 준비하세요.
+            <T tip="EAD (Employment Authorization Document) — 취업 허가증. 동반비자(J-2, H-4 등) 소지자가 미국에서 일하기 위해 필요한 서류입니다.">EAD</T>(Employment Authorization Document)로 취업한 경우, EAD 사본과 W-2도 준비하세요.
           </Callout>
         )}
       </>
@@ -2391,7 +2391,7 @@ export default function TaxGuide() {
           </ul>
 
           <Callout type="info" label="환율 변환">
-            한국 원화 소득은 <strong>IRS 공식 연평균 환율</strong>로 미국 달러로 변환하여 신고합니다.
+            한국 원화 소득은 <strong><T tip="IRS 연평균 환율 — IRS가 발표하는 연도별 공식 환율. 해외 소득을 미국 달러로 변환할 때 이 환율을 사용합니다.">IRS 공식 연평균 환율</T></strong>로 미국 달러로 변환하여 신고합니다.
             IRS 웹사이트에서 &ldquo;Yearly Average Currency Exchange Rates&rdquo;를 검색하세요.
           </Callout>
 
@@ -2432,7 +2432,7 @@ export default function TaxGuide() {
           <Prose>
             <p>
               한국에 금융계좌가 있는 영주권자·시민권자는 <strong>해외계좌 보고 의무</strong>가 있습니다.
-              Form 1040의 <Code>Schedule B Part III</Code>에서 해외 금융계좌 보유 여부를 답변해야 합니다.
+              Form 1040의 <Code><T tip="Schedule B — 이자·배당 소득이 $1,500을 초과하면 첨부해야 하는 스케줄. Part III에서 해외 금융계좌 보유 여부를 답변합니다.">Schedule B</T> Part III</Code>에서 해외 금융계좌 보유 여부를 답변해야 합니다.
             </p>
           </Prose>
 
@@ -2447,8 +2447,8 @@ export default function TaxGuide() {
               <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
                 <li>&bull; 해외 금융계좌 합산 <strong>$10,000 초과</strong> 시</li>
                 <li>&bull; 마감: 4/15 (자동 연장 10/15)</li>
-                <li>&bull; BSA E-Filing 시스템으로 전자 제출</li>
-                <li>&bull; IRS가 아닌 <strong>FinCEN</strong>에 제출</li>
+                <li>&bull; <T tip="BSA E-Filing — Bank Secrecy Act 전자 신고 시스템. FBAR를 온라인으로 제출하는 FinCEN의 웹사이트입니다.">BSA E-Filing</T> 시스템으로 전자 제출</li>
+                <li>&bull; IRS가 아닌 <strong><T tip="FinCEN (Financial Crimes Enforcement Network) — 미국 재무부 산하 금융범죄수사국. FBAR는 IRS가 아닌 이 기관에 제출합니다.">FinCEN</T></strong>에 제출</li>
                 <li>&bull; 미제출 벌금: 건당 $10,000+</li>
               </ul>
             </div>
@@ -2498,7 +2498,7 @@ export default function TaxGuide() {
           <SectionLabel>05 — 고난도 폼 (CPA 권장)</SectionLabel>
           <Callout type="warn" label="전문가 도움 필요">
             아래 양식은 매우 복잡하며, 미제출 시 <strong>건당 $10,000 이상</strong>의 벌금이 부과될 수 있습니다.
-            해당되는 경우 반드시 <strong>국제 세무 경험이 있는 CPA</strong>와 상담하세요.
+            해당되는 경우 반드시 <strong>국제 세무 경험이 있는 <T tip="CPA (Certified Public Accountant) — 미국 공인회계사. 국제 세무 전문 CPA는 해외 소득, FBAR, PFIC 등 복잡한 신고를 도와줍니다.">CPA</T></strong>와 상담하세요.
           </Callout>
           <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
             {[
@@ -2526,7 +2526,7 @@ export default function TaxGuide() {
           </div>
 
           <Callout type="info" label="한국 펀드/ETF = PFIC">
-            한국에서 가입한 펀드나 ETF는 미국 세법상 <strong>PFIC(Passive Foreign Investment Company)</strong>로 분류됩니다.
+            한국에서 가입한 펀드나 ETF는 미국 세법상 <strong><T tip="PFIC (Passive Foreign Investment Company) — 소극적 해외투자회사. 한국의 펀드, ETF가 이에 해당하며, 매우 불리한 세율이 적용됩니다. Form 8621로 보고합니다.">PFIC</T>(Passive Foreign Investment Company)</strong>로 분류됩니다.
             PFIC는 매우 불리한 과세 방식이 적용되므로, 한국 펀드를 보유한 경우 반드시 CPA와 상담하세요.
           </Callout>
 
@@ -2749,7 +2749,7 @@ export default function TaxGuide() {
               </li>
               <li className="flex items-baseline gap-3">
                 <span className="w-1 h-1 rounded-full shrink-0 translate-y-[-2px]" style={{ background: "var(--ink-faint)" }} />
-                SSN이 없는 경우 <Code>Form W-7</Code>으로{" "}
+                SSN이 없는 경우 <Code><T tip="Form W-7 — ITIN(Individual Taxpayer Identification Number) 신청 양식. SSN을 받을 수 없는 외국인이 세금 신고 시 사용합니다.">Form W-7</T></Code>으로{" "}
                 <T tip="Individual Taxpayer Identification Number.">ITIN</T>을 함께 신청 (1040-NR에 동봉)
               </li>
             </ul>
@@ -2885,9 +2885,9 @@ export default function TaxGuide() {
             <br />
             &bull; <strong>FICA 면제</strong> (고용주가 잘못 징수한 경우 환급 신청 가능)
             <br />
-            &bull; W-2에 FICA가 원천징수되어 있다면 고용주에게 먼저 정정 요청
+            &bull; W-2에 FICA가 <T tip="원천징수(Withholding) — 고용주가 급여에서 세금을 미리 공제하여 IRS에 납부하는 것.">원천징수</T>되어 있다면 고용주에게 먼저 정정 요청
             <br />
-            &bull; 정정이 안 되면 <Code>Form 843</Code> + <Code>Form 8316</Code>으로 IRS에 직접 환급 신청
+            &bull; 정정이 안 되면 <Code><T tip="Form 843 — 세금 환급을 청구하거나 이미 납부한 세금의 감면을 요청하는 IRS 양식.">Form 843</T></Code> + <Code><T tip="Form 8316 — FICA 환급 청구 시 Form 843과 함께 제출하는 보충 양식.">Form 8316</T></Code>으로 IRS에 직접 환급 신청
           </Callout>
         )}
 
@@ -2984,7 +2984,7 @@ export default function TaxGuide() {
 
         <SectionLabel>주세 신고 필요 여부 빠른 체크</SectionLabel>
         <Callout type="tip" label="W-2 확인법">
-          W-2의 <strong>Box 15 (State)</strong>, <strong>Box 16 (State wages)</strong>, <strong>Box 17 (State income tax)</strong>를 확인하세요.
+          <T tip="W-2 — 고용주가 발급하는 연간 급여 소득 및 원천징수 내역서. Box 번호별로 각종 정보가 기재되어 있습니다.">W-2</T>의 <strong><T tip="Box 15 — W-2의 주(State) 코드가 기재된 칸. 어떤 주에 세금을 냈는지 표시합니다.">Box 15</T> (State)</strong>, <strong><T tip="Box 16 — W-2에서 해당 주의 과세 소득 금액이 기재된 칸.">Box 16</T> (State wages)</strong>, <strong><T tip="Box 17 — W-2에서 해당 주에 원천징수된 소득세 금액이 기재된 칸. 이 금액이 있다면 주세 신고를 해야 환급받을 수 있습니다.">Box 17</T> (State income tax)</strong>를 확인하세요.
           <br /><br />
           &bull; Box 17에 금액이 있다면 &rarr; 주 소득세가 원천징수된 것이므로, <strong>주세 신고를 해야 환급</strong>받을 수 있습니다.
           <br />
@@ -3097,7 +3097,7 @@ export default function TaxGuide() {
             {[
               "소프트웨어에서 '파일' 또는 'Submit' 클릭",
               "24시간 내 IRS 접수 확인",
-              "환급 시 2~3주 내 입금 (Direct Deposit)",
+              "환급 시 2~3주 내 계좌 입금 (Direct Deposit — 은행 계좌 직접 입금)",
               "주세도 e-file 가능 (대부분의 주)",
             ].map((item, i) => (
               <li key={i} className="flex items-baseline gap-3">
@@ -3146,7 +3146,7 @@ export default function TaxGuide() {
           </div>
 
           <Callout type="info" label="FBAR 별도 제출">
-            FBAR(FinCEN 114)는 세금 신고서와 <strong>별도로</strong> BSA E-Filing 시스템에서 전자 제출합니다.
+            <T tip="FBAR (FinCEN 114) — 해외 금융계좌 보고. 세금 신고서와는 별도로 제출해야 합니다.">FBAR</T>(FinCEN 114)는 세금 신고서와 <strong>별도로</strong> <T tip="BSA E-Filing — Bank Secrecy Act 전자 신고 시스템. bsaefiling.fincen.treas.gov에서 온라인으로 제출합니다.">BSA E-Filing</T> 시스템에서 전자 제출합니다.
             IRS에 보내는 것이 아닙니다.
           </Callout>
         </>
@@ -3216,9 +3216,9 @@ export default function TaxGuide() {
         </div>
 
         <Callout type="warn" label="USPS만 사용!">
-          위 주소는 모두 <strong>P.O. Box</strong>입니다.
+          위 주소는 모두 <strong><T tip="P.O. Box (Post Office Box) — 우체국 사서함 주소. 사설 택배 회사(UPS, FedEx 등)로는 배달할 수 없고, USPS(미국 우체국)로만 배달됩니다.">P.O. Box</T></strong>입니다.
           <strong> UPS, FedEx, DHL 등 사설 택배로는 배달이 불가능합니다.</strong>
-          반드시 <strong>USPS (미국 우체국)</strong>를 이용하세요.
+          반드시 <strong><T tip="USPS (United States Postal Service) — 미국 우체국. IRS P.O. Box 주소로 세금 서류를 보낼 때는 반드시 USPS를 이용해야 합니다.">USPS</T> (미국 우체국)</strong>를 이용하세요.
         </Callout>
 
         <SectionLabel>제출할 곳 요약</SectionLabel>
@@ -3366,10 +3366,10 @@ export default function TaxGuide() {
         </p>
 
         <Callout type="info" label="다시 한번">
-          <strong>세금 신고(Tax Return) &ne; 환급(Refund)</strong>
+          <strong><T tip="Tax Return — 세금 신고서를 작성하여 제출하는 행위. 모든 납세자의 의무입니다.">세금 신고(Tax Return)</T> &ne; <T tip="Refund — 환급. 원천징수된 세금이 실제 세금보다 많을 때 차액을 돌려받는 것입니다.">환급(Refund)</T></strong>
           <br />
           세금 신고는 의무이며, 결과에 따라 환급이 있을 수도, 추가 납부가 있을 수도 있습니다.
-          원천징수(W-2 Box 2)된 금액이 실제 세금보다 많았다면 차액을 환급받습니다.
+          <T tip="원천징수(Withholding) — 고용주가 급여에서 세금을 미리 공제하여 IRS에 납부하는 것. W-2 Box 2에 연방세 원천징수 금액이 기재됩니다.">원천징수</T>(W-2 Box 2)된 금액이 실제 세금보다 많았다면 차액을 환급받습니다.
         </Callout>
 
         <SectionLabel>연방세 환급 추적</SectionLabel>
