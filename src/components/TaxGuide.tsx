@@ -291,18 +291,84 @@ const NO_TAX_STATES = [
   "South Dakota", "Tennessee", "Texas", "Washington", "Wyoming",
 ];
 
+interface SearchEntry {
+  term: string;
+  termKo: string;
+  desc: string;
+  step: number;
+  keywords: string[];
+}
+
+const SEARCH_INDEX: SearchEntry[] = [
+  { term: "SPT", termKo: "실질 체류 테스트", desc: "Substantial Presence Test — 183일 기준 거주자 판정", step: 1, keywords: ["substantial presence", "183일", "거주자 판정", "체류일수"] },
+  { term: "NRA", termKo: "비거주 외국인", desc: "Non-Resident Alien — 세법상 비거주자", step: 1, keywords: ["non-resident alien", "비거주자", "외국인"] },
+  { term: "Exempt Individual", termKo: "면제 대상자", desc: "SPT 체류일 카운트에서 제외되는 F/J 비자 소지자", step: 1, keywords: ["exempt", "면제", "f-1", "j-1", "체류일 제외"] },
+  { term: "Form 1040-NR", termKo: "비거주자 소득세 신고서", desc: "비거주 외국인용 연방 소득세 신고 양식", step: 4, keywords: ["1040-NR", "1040NR", "비거주자 신고", "연방세"] },
+  { term: "Form 1040", termKo: "소득세 신고서", desc: "미국 거주자/시민권자용 연방 소득세 신고 양식", step: 4, keywords: ["1040", "거주자 신고", "연방세", "individual income tax"] },
+  { term: "W-2", termKo: "급여 명세서", desc: "고용주가 발급하는 연간 급여 및 원천징수 내역서", step: 3, keywords: ["w2", "급여", "wage", "원천징수", "고용주"] },
+  { term: "1042-S", termKo: "조세조약 소득 명세서", desc: "조세조약 적용 소득에 대한 원천징수 내역서", step: 3, keywords: ["1042s", "1042-s", "조세조약 소득", "원천징수"] },
+  { term: "1099 시리즈", termKo: "기타 소득 명세서", desc: "이자(INT), 배당(DIV), 프리랜서(NEC) 등 소득 내역서", step: 3, keywords: ["1099", "1099-int", "1099-div", "1099-nec", "이자", "배당", "프리랜서"] },
+  { term: "FBAR", termKo: "해외 금융계좌 보고", desc: "FinCEN 114 — 해외 금융계좌 합산 $10,000 초과 시 보고 의무", step: 4, keywords: ["fbar", "fincen", "114", "해외계좌", "해외 금융", "$10,000", "만 달러"] },
+  { term: "FATCA / Form 8938", termKo: "해외 금융자산 신고", desc: "해외 금융자산이 일정 금액 초과 시 IRS에 보고", step: 4, keywords: ["fatca", "8938", "form 8938", "해외 금융자산", "foreign financial assets"] },
+  { term: "FBAR vs Form 8938", termKo: "FBAR와 8938 비교", desc: "FBAR는 FinCEN에, 8938은 IRS에 보고 — 기준금액과 대상 상이", step: 4, keywords: ["fbar 8938 비교", "fbar vs", "차이점", "fincen irs"] },
+  { term: "Form 8843", termKo: "면제 대상자 신고서", desc: "F/J 비자 소지자가 매년 제출해야 하는 체류 신분 증명 양식", step: 4, keywords: ["8843", "form 8843", "exempt individual statement", "f비자", "j비자"] },
+  { term: "FTC / Form 1116", termKo: "외국납부세액공제", desc: "Foreign Tax Credit — 한국에서 낸 세금을 미국 세금에서 공제", step: 4, keywords: ["ftc", "foreign tax credit", "1116", "form 1116", "외국납부세액", "이중과세"] },
+  { term: "FEIE / Form 2555", termKo: "해외 근로소득 공제", desc: "Foreign Earned Income Exclusion — 해외 근로소득 최대 $130,000 공제", step: 4, keywords: ["feie", "2555", "form 2555", "해외 근로소득", "foreign earned income", "$130,000"] },
+  { term: "Form 8833", termKo: "조세조약 포지션 공개", desc: "Treaty-Based Return Position Disclosure — 조세조약 혜택 적용 시 제출", step: 2, keywords: ["8833", "form 8833", "treaty disclosure", "treaty position", "조세조약 공개"] },
+  { term: "SSN", termKo: "사회보장번호", desc: "Social Security Number — 미국에서 발급받는 고유 번호", step: 3, keywords: ["ssn", "social security", "사회보장", "소셜번호"] },
+  { term: "ITIN", termKo: "개인납세자식별번호", desc: "Individual Taxpayer Identification Number — SSN 없을 때 세금 신고용 번호", step: 3, keywords: ["itin", "w-7", "form w-7", "납세자번호", "taxpayer identification"] },
+  { term: "조세조약 (Tax Treaty)", termKo: "한미 조세조약", desc: "한국-미국 간 이중과세 방지 및 세금 감면 협약", step: 2, keywords: ["tax treaty", "조세조약", "한미", "이중과세", "korea us treaty"] },
+  { term: "Saving Clause", termKo: "세이빙 클로즈", desc: "미국 거주자에게는 조세조약 혜택 제한 — 단, 예외 조항 존재", step: 2, keywords: ["saving clause", "세이빙", "거주자 제한", "조약 예외"] },
+  { term: "표준공제 (Standard Deduction)", termKo: "표준공제", desc: "거주자가 적용받는 기본 소득공제 (2025: Single $15,700)", step: 4, keywords: ["standard deduction", "표준공제", "기본공제", "$15,700", "공제금액"] },
+  { term: "Filing Status", termKo: "신고 지위", desc: "Single, MFJ, MFS, HoH 등 세금 신고 시 선택하는 상태", step: 4, keywords: ["filing status", "신고 지위", "신고 상태", "single", "married"] },
+  { term: "MFJ", termKo: "부부 공동 신고", desc: "Married Filing Jointly — 배우자와 함께 세금 신고", step: 4, keywords: ["mfj", "married filing jointly", "부부 공동", "joint filing"] },
+  { term: "Schedule B", termKo: "이자·배당 소득 명세", desc: "이자 또는 배당 소득이 $1,500 초과 시 첨부하는 스케줄", step: 4, keywords: ["schedule b", "이자 배당", "$1,500", "interest dividends"] },
+  { term: "Form 3520", termKo: "해외 증여·상속 보고", desc: "해외 증여·상속 $100,000 초과 수령 시 보고", step: 4, keywords: ["3520", "form 3520", "해외 증여", "상속", "gift", "$100,000", "foreign trust"] },
+  { term: "Form 5471", termKo: "해외 법인 보고", desc: "해외 법인의 지분을 10% 이상 보유 시 보고", step: 4, keywords: ["5471", "form 5471", "해외 법인", "foreign corporation", "지분"] },
+  { term: "PFIC / Form 8621", termKo: "해외 투자펀드 보고", desc: "한국 펀드·ETF 등 Passive Foreign Investment Company 보고", step: 4, keywords: ["pfic", "8621", "form 8621", "해외 펀드", "etf", "passive foreign"] },
+  { term: "TurboTax", termKo: "터보택스", desc: "미국 인기 세금 신고 소프트웨어 (거주자용)", step: 6, keywords: ["turbotax", "터보택스", "인튜이트", "intuit"] },
+  { term: "Sprintax", termKo: "스프린택스", desc: "비거주 외국인 전문 세금 신고 소프트웨어", step: 6, keywords: ["sprintax", "스프린택스", "비거주자 소프트웨어", "nra software"] },
+  { term: "H&R Block", termKo: "에이치앤알블록", desc: "미국 세금 신고 서비스 (대면+온라인)", step: 6, keywords: ["h&r block", "에이치앤알", "hr block", "세금 서비스"] },
+  { term: "FreeTaxUSA", termKo: "프리택스유에스에이", desc: "무료 연방 세금 신고 소프트웨어 (거주자용)", step: 6, keywords: ["freetaxusa", "프리택스", "무료 신고", "free filing"] },
+  { term: "e-file", termKo: "전자 신고", desc: "IRS에 온라인으로 세금 신고서 제출", step: 6, keywords: ["e-file", "efile", "전자 신고", "온라인 신고", "전자 제출"] },
+  { term: "주세 (State Tax)", termKo: "주 소득세", desc: "연방세 외에 거주 주(State)에 별도로 내는 소득세", step: 5, keywords: ["state tax", "주세", "주 소득세", "state income tax", "거주 주"] },
+  { term: "FICA", termKo: "사회보장세+메디케어", desc: "Social Security (6.2%) + Medicare (1.45%) — F/J 비자 NRA는 면제", step: 4, keywords: ["fica", "social security tax", "medicare", "사회보장세", "메디케어", "6.2%", "1.45%"] },
+  { term: "Form 4868", termKo: "신고 기한 연장", desc: "세금 신고 마감일을 6개월 자동 연장하는 신청서", step: 6, keywords: ["4868", "form 4868", "extension", "연장", "기한 연장", "6개월"] },
+  { term: "IRS Where's My Refund", termKo: "환급 조회", desc: "IRS 웹사이트에서 환급 진행 상황 확인", step: 7, keywords: ["where's my refund", "환급 조회", "refund status", "환급 상태", "환급 확인"] },
+  { term: "Direct Deposit", termKo: "계좌 직접 입금", desc: "환급금을 은행 계좌로 직접 입금받는 방식", step: 7, keywords: ["direct deposit", "계좌 입금", "은행 입금", "환급 입금"] },
+  { term: "환급 (Tax Refund)", termKo: "세금 환급", desc: "원천징수된 세금이 실제 세액보다 많을 때 돌려받는 금액", step: 7, keywords: ["refund", "환급", "세금 환급", "tax refund", "돌려받기"] },
+  { term: "원천징수 (Withholding)", termKo: "원천징수", desc: "고용주가 급여에서 미리 공제하여 IRS에 납부하는 세금", step: 3, keywords: ["withholding", "원천징수", "세금 공제", "미리 납부"] },
+  { term: "Publication 519", termKo: "외국인 세금 가이드", desc: "IRS 발행 외국인을 위한 미국 세금 종합 안내서", step: 4, keywords: ["pub 519", "publication 519", "외국인 가이드", "aliens tax guide"] },
+  { term: "Article 20(1)", termKo: "교수·연구 조항", desc: "한미 조세조약 — 교수·연구 활동 소득 최대 2년간 면세", step: 2, keywords: ["article 20", "교수", "연구", "2년 면세", "professor"] },
+  { term: "Article 21(1)", termKo: "학생 조항", desc: "한미 조세조약 — 유학생 학비·장학금 면세, 생활비 소득 $2,000 면세", step: 2, keywords: ["article 21", "학생", "장학금", "$2,000", "student"] },
+  { term: "Dual-Status", termKo: "이중 신분", desc: "같은 해에 비거주자+거주자 양쪽 신분이 모두 적용되는 경우", step: 1, keywords: ["dual status", "이중 신분", "dual-status", "비거주자 거주자"] },
+  { term: "Form W-7", termKo: "ITIN 신청서", desc: "Individual Taxpayer Identification Number 신청 양식", step: 3, keywords: ["w-7", "w7", "form w-7", "itin 신청", "납세번호 신청"] },
+  { term: "Form 8233", termKo: "조세조약 면세 신청", desc: "고용주에게 제출하여 급여에서 조세조약 면세 적용받는 양식", step: 2, keywords: ["8233", "form 8233", "면세 신청", "withholding exemption", "treaty exemption"] },
+  { term: "세금 신고 마감일", termKo: "마감일", desc: "4월 15일 (비거주자 우편 제출 시 6월 15일 자동 연장)", step: 6, keywords: ["deadline", "마감일", "4월 15일", "6월 15일", "filing deadline", "due date"] },
+  { term: "Form 8858", termKo: "해외 사업체 보고", desc: "Foreign Disregarded Entity 보고 양식", step: 4, keywords: ["8858", "form 8858", "disregarded entity", "해외 사업체"] },
+  { term: "전세계 소득 (Worldwide Income)", termKo: "전세계 소득", desc: "거주자·시민권자는 전세계 모든 소득을 미국에 보고해야 함", step: 4, keywords: ["worldwide income", "전세계 소득", "해외 소득", "global income", "모든 소득"] },
+  { term: "IRS 연평균 환율", termKo: "연평균 환율", desc: "한국 원화를 미국 달러로 환산할 때 사용하는 IRS 공식 환율", step: 4, keywords: ["exchange rate", "환율", "연평균 환율", "원화 달러", "currency"] },
+];
+
 /* ================================================================
    UI PRIMITIVES
    ================================================================ */
 
 function T({ children, tip }: { children: ReactNode; tip: string }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number; arrowLeft: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; arrowLeft: number; below: boolean } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
-  const tipRef = useRef<HTMLSpanElement>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Auto-close on scroll
+  useEffect(() => {
+    if (!open) return;
+    const onScroll = () => setOpen(false);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [open]);
 
   const reposition = useCallback(() => {
     if (!ref.current) return;
@@ -312,7 +378,6 @@ function T({ children, tip }: { children: ReactNode; tip: string }) {
     const arrowIdeal = tipW / 2;
     let arrowLeft = arrowIdeal;
 
-    // clamp horizontally
     if (left < 16) {
       arrowLeft = arrowIdeal + (left - 16);
       left = 16;
@@ -323,9 +388,9 @@ function T({ children, tip }: { children: ReactNode; tip: string }) {
     }
     arrowLeft = Math.max(12, Math.min(tipW - 12, arrowLeft));
 
-    // place above trigger; if not enough space, place below
-    let top = rect.top - 10;
-    setPos({ top, left, arrowLeft });
+    const below = rect.top <= 80;
+    const top = below ? rect.bottom + 10 : rect.top - 10;
+    setPos({ top, left, arrowLeft, below });
   }, []);
 
   const handleOpen = useCallback(() => {
@@ -364,20 +429,28 @@ function T({ children, tip }: { children: ReactNode; tip: string }) {
         {children}
       </span>
       {mounted && open && pos && createPortal(
-        <span
-          ref={tipRef}
-          className="tt-portal"
-          role="tooltip"
-          style={{
-            position: "fixed",
-            bottom: `${window.innerHeight - pos.top}px`,
-            left: `${pos.left}px`,
-            zIndex: 9998,
-          }}
-        >
-          {tip}
-          <span className="tt-arrow" style={{ left: `${pos.arrowLeft}px` }} />
-        </span>,
+        <>
+          {/* Mobile backdrop — tap to dismiss */}
+          <div className="tt-backdrop" onClick={handleClose} />
+          <span
+            className="tt-portal"
+            role="tooltip"
+            style={{
+              position: "fixed",
+              ...(pos.below
+                ? { top: `${pos.top}px` }
+                : { bottom: `${window.innerHeight - pos.top}px` }),
+              left: `${pos.left}px`,
+              zIndex: 9998,
+            }}
+          >
+            <span className="tt-badge">?</span>
+            {tip}
+            {pos.below
+              ? <span className="tt-arrow-top" style={{ left: `${pos.arrowLeft}px` }} />
+              : <span className="tt-arrow" style={{ left: `${pos.arrowLeft}px` }} />}
+          </span>
+        </>,
         document.body
       )}
     </>
@@ -489,6 +562,7 @@ export default function TaxGuide() {
     loadFromLS<VisaType | "">(LS_KEYS.visaType, ""),
   );
   const [direction, setDirection] = useState<"left" | "right" | "none">("none");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   /* Persist to localStorage on change */
   useEffect(() => { saveToLS(LS_KEYS.step, step); }, [step]);
@@ -518,9 +592,16 @@ export default function TaxGuide() {
     });
   };
 
-  /* ---- Keyboard navigation (← → arrows) ---- */
+  /* ---- Keyboard navigation (← → arrows) + Cmd/Ctrl+K search ---- */
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl+K → toggle search
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+        return;
+      }
+      if (searchOpen) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
       if (e.key === "ArrowRight") { goNext(); }
@@ -536,10 +617,12 @@ export default function TaxGuide() {
 
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
+      if (searchOpen) return;
       touchStartX.current = e.touches[0].clientX;
       touchStartY.current = e.touches[0].clientY;
     };
     const onTouchEnd = (e: TouchEvent) => {
+      if (searchOpen) return;
       const dx = e.changedTouches[0].clientX - touchStartX.current;
       const dy = e.changedTouches[0].clientY - touchStartY.current;
       if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
@@ -608,12 +691,26 @@ export default function TaxGuide() {
               </span>
             )}
           </div>
-          <span
-            className="font-[family-name:var(--font-mono)] text-[11px] tabular-nums"
-            style={{ color: "var(--ink-faint)" }}
-          >
-            {String(step + 1).padStart(2, "0")}/{String(STEPS.length).padStart(2, "0")}
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-1.5 px-2 py-1 rounded transition-colors"
+              style={{ background: "var(--rule-light)", cursor: "pointer", border: "none" }}
+              aria-label="검색 열기 (Cmd+K)"
+              title="검색 (⌘K)"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <span className="hidden sm:inline font-[family-name:var(--font-mono)] text-[10px]" style={{ color: "var(--ink-faint)" }}>⌘K</span>
+            </button>
+            <span
+              className="font-[family-name:var(--font-mono)] text-[11px] tabular-nums"
+              style={{ color: "var(--ink-faint)" }}
+            >
+              {String(step + 1).padStart(2, "0")}/{String(STEPS.length).padStart(2, "0")}
+            </span>
+          </div>
         </div>
         {/* progress */}
         <div className="h-[2px]" style={{ background: "var(--rule-light)" }}>
@@ -734,6 +831,9 @@ export default function TaxGuide() {
           </div>
         </div>
       </div>
+
+      {/* Search modal */}
+      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
     </div>
   );
 
@@ -3561,6 +3661,119 @@ export default function TaxGuide() {
           </p>
         </div>
       </>
+    );
+  }
+
+  /* ==============================================================
+     SHARED — SearchModal
+     ============================================================== */
+
+  function SearchModal({ onClose }: { onClose: () => void }) {
+    const [query, setQuery] = useState("");
+    const [activeIdx, setActiveIdx] = useState(0);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const resultsRef = useRef<HTMLDivElement>(null);
+
+    const results = query.trim().length > 0
+      ? SEARCH_INDEX.filter((entry) => {
+          const q = query.toLowerCase();
+          return (
+            entry.term.toLowerCase().includes(q) ||
+            entry.termKo.includes(q) ||
+            entry.desc.toLowerCase().includes(q) ||
+            entry.keywords.some((k) => k.toLowerCase().includes(q))
+          );
+        })
+      : [];
+
+    useEffect(() => { inputRef.current?.focus(); }, []);
+    useEffect(() => { setActiveIdx(0); }, [query]);
+
+    // Body scroll lock
+    useEffect(() => {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }, []);
+
+    // Scroll active item into view
+    useEffect(() => {
+      if (!resultsRef.current) return;
+      const btns = resultsRef.current.querySelectorAll("button");
+      btns[activeIdx]?.scrollIntoView({ block: "nearest" });
+    }, [activeIdx]);
+
+    const handleSelect = (entry: SearchEntry) => {
+      onClose();
+      goTo(entry.step);
+    };
+
+    const onKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIdx((i) => (i + 1) % Math.max(results.length, 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIdx((i) => (i - 1 + Math.max(results.length, 1)) % Math.max(results.length, 1));
+      } else if (e.key === "Enter" && results[activeIdx]) {
+        e.preventDefault();
+        handleSelect(results[activeIdx]);
+      }
+    };
+
+    return createPortal(
+      <div className="search-overlay" onClick={onClose}>
+        <div className="search-modal" onClick={(e) => e.stopPropagation()} onKeyDown={onKeyDown}>
+          <div className="search-input-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="세금 용어 검색 (예: FBAR, 조세조약, 환급)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <span className="search-esc-badge">ESC</span>
+          </div>
+          <div className="search-results" ref={resultsRef}>
+            {query.trim().length > 0 && results.length === 0 && (
+              <div className="search-empty">검색 결과가 없습니다</div>
+            )}
+            {results.map((entry, i) => (
+              <button
+                key={`${entry.term}-${entry.step}`}
+                className={i === activeIdx ? "search-active" : ""}
+                onClick={() => handleSelect(entry)}
+              >
+                <span className="search-step-badge">
+                  {String(entry.step + 1).padStart(2, "0")}
+                </span>
+                <span>
+                  <span className="text-[13px] font-medium" style={{ color: "var(--ink)" }}>
+                    {entry.term}
+                  </span>
+                  {entry.termKo && (
+                    <span className="text-[12px] ml-1.5" style={{ color: "var(--ink-muted)" }}>
+                      {entry.termKo}
+                    </span>
+                  )}
+                  <span className="block text-[12px] mt-0.5" style={{ color: "var(--ink-faint)" }}>
+                    {entry.desc}
+                  </span>
+                </span>
+              </button>
+            ))}
+            {query.trim().length === 0 && (
+              <div className="search-empty" style={{ color: "var(--ink-faint)" }}>
+                키워드를 입력하면 관련 단계로 바로 이동할 수 있습니다
+              </div>
+            )}
+          </div>
+        </div>
+      </div>,
+      document.body
     );
   }
 
