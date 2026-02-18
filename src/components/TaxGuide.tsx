@@ -47,7 +47,7 @@ const STEPS = [
   "환급 추적",
 ];
 
-type VisaType = "f1-student" | "j1-researcher" | "j1-student" | "h1b" | "dependent" | "green-card" | "citizen";
+type VisaType = "f1-student" | "j1-researcher" | "j1-student" | "h1b" | "l1" | "l2" | "dependent" | "green-card" | "citizen";
 
 interface DocItem {
   id: string;
@@ -177,6 +177,51 @@ const VISA_CONFIGS: Record<VisaType, VisaConfig> = {
       { id: "1099int", label: "1099-INT (해당 시)", desc: "은행 이자 소득이 있는 경우" },
       { id: "1099div", label: "1099-DIV (해당 시)", desc: "배당금 소득이 있는 경우" },
       { id: "1099nec", label: "1099-NEC (해당 시)", desc: "독립 계약자(프리랜서) 소득이 있는 경우" },
+      { id: "prev", label: "전년도 세금 신고서 사본", desc: "이전에 신고한 적이 있는 경우" },
+    ],
+    form8233: false,
+  },
+  "l1": {
+    label: "L-1 Intracompany Transferee",
+    labelKo: "주재원/파견",
+    desc: "L-1 비자로 미국에 파견·전근된 주재원 (L-1A 관리자/L-1B 전문지식)",
+    sptExemptYears: 0,
+    treatyArticle: "",
+    treatyBenefit: "일반적인 면세 혜택 없음 — L-1 소지자에게 적용되는 별도의 조세조약 면세 조항이 없습니다",
+    ficaExempt: false,
+    nraToolsOnly: false,
+    docs: [
+      { id: "passport", label: "여권 (Passport)", desc: "유효한 여권 원본" },
+      { id: "i797", label: "I-797 (승인 통지서)", desc: "L-1 비자 청원 승인 통지서 (Notice of Action)" },
+      { id: "i94", label: "I-94 출입국 기록", desc: "i94.cbp.dhs.gov 에서 출력" },
+      { id: "entrydates", label: "미국 입국/출국 날짜 (연도별)", desc: "여권 도장 또는 I-94 Travel History 에서 연도별 입출국일 확인" },
+      { id: "ssn", label: "SSN", desc: "Social Security Number (L-1은 SSN 발급 대상)" },
+      { id: "w2", label: "W-2", desc: "고용주 발급 (1~2월), 급여 및 원천징수 내역" },
+      { id: "1099int", label: "1099-INT (해당 시)", desc: "은행 이자 소득이 있는 경우" },
+      { id: "1099div", label: "1099-DIV (해당 시)", desc: "배당금 소득이 있는 경우" },
+      { id: "1099nec", label: "1099-NEC (해당 시)", desc: "독립 계약자(프리랜서) 소득이 있는 경우" },
+      { id: "totalization", label: "사회보장협정 적용증명서 (해당 시)", desc: "한국 본사 파견 시 한미 사회보장협정(Totalization Agreement) 적용 증명서 — 국민연금공단 발급" },
+      { id: "prev", label: "전년도 세금 신고서 사본", desc: "이전에 신고한 적이 있는 경우" },
+    ],
+    form8233: false,
+  },
+  "l2": {
+    label: "L-2 Dependent",
+    labelKo: "L-2 동반",
+    desc: "L-1 소지자의 배우자 또는 미성년 자녀 (L-2 동반비자)",
+    sptExemptYears: 0,
+    treatyArticle: "",
+    treatyBenefit: "동반비자 본인에게는 별도의 조세조약 혜택이 적용되지 않습니다",
+    ficaExempt: false,
+    nraToolsOnly: false,
+    docs: [
+      { id: "passport", label: "여권 (Passport)", desc: "유효한 여권 원본" },
+      { id: "i94", label: "I-94 출입국 기록", desc: "i94.cbp.dhs.gov 에서 출력" },
+      { id: "entrydates", label: "미국 입국/출국 날짜 (연도별)", desc: "여권 도장 또는 I-94 Travel History 에서 연도별 입출국일 확인" },
+      { id: "primarydocs", label: "주비자 소지자(L-1)의 비자 서류 사본", desc: "L-1 소지자의 I-797 승인 통지서 사본" },
+      { id: "ead", label: "EAD (해당 시)", desc: "Employment Authorization Document — 근로 허가증 (취업한 경우)" },
+      { id: "ssn", label: "SSN (또는 ITIN)", desc: "취업 중이면 SSN, 아니면 ITIN(Form W-7)으로 대체 가능" },
+      { id: "w2", label: "W-2 (해당 시)", desc: "취업한 경우 고용주 발급 급여 내역" },
       { id: "prev", label: "전년도 세금 신고서 사본", desc: "이전에 신고한 적이 있는 경우" },
     ],
     form8233: false,
@@ -348,6 +393,9 @@ const SEARCH_INDEX: SearchEntry[] = [
   { term: "Form 8858", termKo: "해외 사업체 보고", desc: "Foreign Disregarded Entity 보고 양식", step: 4, keywords: ["8858", "form 8858", "disregarded entity", "해외 사업체"] },
   { term: "전세계 소득 (Worldwide Income)", termKo: "전세계 소득", desc: "거주자·시민권자는 전세계 모든 소득을 미국에 보고해야 함", step: 4, keywords: ["worldwide income", "전세계 소득", "해외 소득", "global income", "모든 소득"] },
   { term: "IRS 연평균 환율", termKo: "연평균 환율", desc: "한국 원화를 미국 달러로 환산할 때 사용하는 IRS 공식 환율", step: 4, keywords: ["exchange rate", "환율", "연평균 환율", "원화 달러", "currency"] },
+  { term: "L-1 (주재원/파견)", termKo: "주재원 비자", desc: "L-1 비자 — 회사 내 전근(Intracompany Transferee), SPT 면제 없음", step: 0, keywords: ["l-1", "l1", "주재원", "파견", "intracompany", "transferee", "l-1a", "l-1b"] },
+  { term: "L-2 (동반비자)", termKo: "L-2 동반비자", desc: "L-1 소지자의 배우자/자녀 동반비자", step: 0, keywords: ["l-2", "l2", "l2 동반", "l-2 동반", "l비자 동반"] },
+  { term: "Totalization Agreement", termKo: "한미 사회보장협정", desc: "한미 사회보장협정 — L-1 파견 주재원의 FICA 면제 가능", step: 2, keywords: ["totalization", "사회보장협정", "totalization agreement", "국민연금", "fica 면제", "파견"] },
 ];
 
 /* ================================================================
@@ -415,8 +463,6 @@ function T({ children, tip }: { children: ReactNode; tip: string }) {
         }}
         onMouseEnter={handleOpen}
         onMouseLeave={handleClose}
-        onFocus={handleOpen}
-        onBlur={handleClose}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
@@ -849,7 +895,9 @@ export default function TaxGuide() {
       { key: "j1-researcher", label: "J-1", labelKo: "연구원/교수" },
       { key: "j1-student", label: "J-1", labelKo: "교환학생" },
       { key: "h1b", label: "H-1B", labelKo: "취업비자" },
+      { key: "l1", label: "L-1", labelKo: "주재원/파견" },
       { key: "dependent", label: "동반비자", labelKo: "J-2/F-2/H-4" },
+      { key: "l2", label: "L-2", labelKo: "L-2 동반" },
     ];
 
     const residentOptions: { key: VisaType; label: string; labelKo: string }[] = [
@@ -1098,7 +1146,7 @@ export default function TaxGuide() {
               {[
                 { label: "신고 대상", value: "2025", sub: "2025 Tax Year 소득" },
                 { label: "기본 마감일", value: "4.15", sub: "2026년 4월 15일 (수)" },
-                { label: "비용", value: visaType === "h1b" ? "$0–50" : "$0–35", sub: "도구 사용료" },
+                { label: "비용", value: visaType === "h1b" || visaType === "l1" ? "$0–50" : "$0–35", sub: "도구 사용료" },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -1173,13 +1221,13 @@ export default function TaxGuide() {
               <p className="mb-4">본인 상황에 따라 제출하는 양식이 다릅니다:</p>
             </Prose>
             <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
-              {visaType === "h1b" ? (
+              {visaType === "h1b" || visaType === "l1" ? (
                 <>
                   <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
                     <div className="flex items-baseline gap-3 mb-1">
                       <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>Case 1</span>
                       <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>
-                        <T tip="Resident Alien — 미국 세법상 거주 외국인. H-1B는 SPT 면제가 없으므로 183일 이상 체류하면 바로 RA입니다.">RA</T> (대부분의 H-1B)
+                        <T tip={`Resident Alien — 미국 세법상 거주 외국인. ${visa.label}는 SPT 면제가 없으므로 183일 이상 체류하면 바로 RA입니다.`}>RA</T> (대부분의 {visa.label})
                       </span>
                     </div>
                     <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
@@ -1190,16 +1238,16 @@ export default function TaxGuide() {
                     <div className="flex items-baseline gap-3 mb-1">
                       <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--ink-muted)" }}>Case 2</span>
                       <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>
-                        <T tip="Non-Resident Alien — 미국 세법상 비거주 외국인. H-1B 첫 해에 183일 미만 체류한 경우에 해당합니다.">NRA</T> (첫 해 부분 연도)
+                        <T tip={`Non-Resident Alien — 미국 세법상 비거주 외국인. ${visa.label} 첫 해에 183일 미만 체류한 경우에 해당합니다.`}>NRA</T> (첫 해 부분 연도)
                       </span>
                     </div>
                     <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
                       <T tip="NRA가 미국 소득을 신고할 때 사용하는 IRS 양식."><Code>Form 1040-NR</Code></T> 제출, 또는{" "}
-                      <T tip="First-Year Choice — H-1B 첫 해에 일부 기간만 체류한 경우, 도착일부터 RA로 취급해달라고 선택할 수 있는 제도.">First-Year Choice Election</T>으로 1040 사용 가능
+                      <T tip={`First-Year Choice — ${visa.label} 첫 해에 일부 기간만 체류한 경우, 도착일부터 RA로 취급해달라고 선택할 수 있는 제도.`}>First-Year Choice Election</T>으로 1040 사용 가능
                     </p>
                   </div>
                 </>
-              ) : visaType === "dependent" ? (
+              ) : visaType === "dependent" || visaType === "l2" ? (
                 <>
                   <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
                     <div className="flex items-baseline gap-3 mb-1">
@@ -1301,7 +1349,7 @@ export default function TaxGuide() {
             <SectionLabel>도착 연도 선택</SectionLabel>
             <Prose>
               <p className="mb-3">
-                {visaType === "h1b"
+                {visaType === "h1b" || visaType === "l1"
                   ? "RA/NRA 판단 및 세금 가이드 계산에 사용됩니다."
                   : "조세조약 면세 기간 계산에 사용됩니다."}
               </p>
@@ -1359,7 +1407,11 @@ export default function TaxGuide() {
     const isResident = visaType === "green-card" || visaType === "citizen";
     const exemptYears = visa.sptExemptYears;
     const isH1B = visaType === "h1b";
+    const isL1 = visaType === "l1";
+    const isL2 = visaType === "l2";
+    const isH1BLike = isH1B || isL1;
     const isDependent = visaType === "dependent";
+    const isDependentLike = isDependent || isL2;
     const isStudent = visaType === "f1-student" || visaType === "j1-student";
 
     if (isResident) {
@@ -1560,17 +1612,26 @@ export default function TaxGuide() {
         </div>
 
         {/* SPT exemption section — varies by visa */}
-        {isH1B ? (
+        {isH1BLike ? (
           <>
-            <SectionLabel>H-1B와 SPT</SectionLabel>
-            <Callout type="warn" label="H-1B는 SPT 면제가 없습니다">
-              H-1B 비자 소지자는 SPT에서 면제되는 기간이 없습니다.
+            <SectionLabel>{visa.label}와 SPT</SectionLabel>
+            <Callout type="warn" label={`${visa.label}는 SPT 면제가 없습니다`}>
+              {visa.label} 비자 소지자는 SPT에서 면제되는 기간이 없습니다.
               <br /><br />
-              따라서 <strong>첫 해부터 183일 이상 체류하면 RA</strong>입니다. 대부분의 H-1B 소지자는 연중 체류하므로 <strong>RA로 분류</strong>됩니다.
+              따라서 <strong>첫 해부터 183일 이상 체류하면 RA</strong>입니다. 대부분의 {visa.label} 소지자는 연중 체류하므로 <strong>RA로 분류</strong>됩니다.
             </Callout>
+            {isL1 && (
+              <Callout type="info" label="L-1 예시: 4/30 도착">
+                4월 30일 도착 &rarr; 해당 연도 체류일 약 245일 &rarr; <strong>183일 초과로 즉시 RA</strong>
+                <br /><br />
+                거주 시작일(Residency Start Date) = 미국 도착일인 <strong>4월 30일</strong>이 됩니다.
+                <br />
+                L-1은 F/J와 달리 <T tip="Substantial Presence Test — 183일 기준 거주자 판정 테스트. L비자는 면제 기간이 없어 모든 체류일이 카운트됩니다.">SPT</T> 면제가 없으므로 도착 첫 해부터 빠르게 RA가 됩니다.
+              </Callout>
+            )}
             <Prose>
               <p>
-                H-1B 첫 해에 중간부터 체류하여 183일 미만인 경우, 해당 연도는 NRA로 분류됩니다. 이 경우 두 가지 선택이 있습니다:
+                {visa.label} 첫 해에 중간부터 체류하여 183일 미만인 경우, 해당 연도는 NRA로 분류됩니다. 이 경우 두 가지 선택이 있습니다:
               </p>
             </Prose>
             <div
@@ -1590,7 +1651,7 @@ export default function TaxGuide() {
               </div>
               <div className="p-5" style={{ background: "var(--paper)" }}>
                 <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-3" style={{ color: "var(--moss)" }}>
-                  Option B — <T tip="First-Year Choice Election — H-1B 첫 해에 일부 기간만 체류한 경우, 도착일부터 RA(거주자)로 취급해달라고 선택할 수 있는 제도입니다.">First-Year Choice</T>
+                  Option B — <T tip={`First-Year Choice Election — ${visa.label} 첫 해에 일부 기간만 체류한 경우, 도착일부터 RA(거주자)로 취급해달라고 선택할 수 있는 제도입니다.`}>First-Year Choice</T>
                 </p>
                 <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
                   도착일부터 RA로 취급해달라고 선택 (배우자 공동 신고 가능)
@@ -1600,17 +1661,42 @@ export default function TaxGuide() {
                 </p>
               </div>
             </div>
+            {isL1 && (
+              <Callout type="warn" label="한미 사회보장협정 (Totalization Agreement)">
+                한국 본사에서 <strong>파견된 L-1 주재원</strong>은 한미 사회보장협정에 따라 미국 <T tip="FICA — Social Security(6.2%) + Medicare(1.45%) 세금. 급여에서 자동 원천징수됩니다.">FICA</T> 납부가 면제될 수 있습니다.
+                <br /><br />
+                &bull; <strong>파견(본사 급여 유지)</strong>: 국민연금공단에서 <strong>적용증명서(Certificate of Coverage)</strong>를 발급받아 미국 고용주에 제출 &rarr; FICA 면제
+                <br />
+                &bull; <strong>현지 채용(미국 법인 급여)</strong>: 사회보장협정 적용 대상이 아니므로 <strong>FICA 납부 의무</strong>
+                <br /><br />
+                적용증명서는 파견 전 또는 파견 초기에 국민연금공단 국제협력팀에 신청합니다.
+              </Callout>
+            )}
           </>
-        ) : isDependent ? (
+        ) : isDependentLike ? (
           <>
-            <SectionLabel>동반비자와 거주자 상태</SectionLabel>
+            <SectionLabel>{isL2 ? "L-2 동반비자" : "동반비자"}와 거주자 상태</SectionLabel>
             <Callout type="info" label="주비자 소지자의 상태를 따릅니다">
-              동반비자(J-2, F-2, H-4) 소지자의 NRA/RA 상태는 <strong>주비자 소지자의 상태를 따릅니다</strong>.
+              {isL2 ? "L-2" : "동반비자(J-2, F-2, H-4)"} 소지자의 NRA/RA 상태는 <strong>주비자 소지자의 상태를 따릅니다</strong>.
               <br /><br />
               &bull; 주비자 소지자가 NRA &rarr; 동반비자도 NRA
               <br />
               &bull; 주비자 소지자가 RA &rarr; 동반비자도 RA
             </Callout>
+            {isL2 && (
+              <>
+                <Callout type="warn" label="L-2는 SPT 면제가 없습니다">
+                  F-2/J-2와 달리 <strong>L-2는 SPT 면제 기간이 없습니다</strong>. 모든 체류일이 SPT 계산에 포함됩니다.
+                  <br /><br />
+                  L-1 배우자와 함께 도착하면 동일하게 183일 이상 체류 시 RA가 됩니다.
+                </Callout>
+                <Callout type="tip" label="MFJ Election">
+                  L-1 배우자가 RA인 경우, L-2 배우자도 <T tip="Married Filing Jointly — 부부 공동 세금 신고. Standard Deduction이 2배이며 세율 구간도 유리합니다."><strong>MFJ(부부 공동 신고)</strong></T>를 선택할 수 있습니다.
+                  <br /><br />
+                  MFJ 선택 시 Standard Deduction $31,400 (2025 기준) 적용으로 세금 부담을 크게 줄일 수 있습니다.
+                </Callout>
+              </>
+            )}
           </>
         ) : (
           <>
@@ -1651,7 +1737,7 @@ export default function TaxGuide() {
           </>
         )}
 
-        {isValidYear && !isH1B && !isDependent && exemptYears > 0 && (
+        {isValidYear && !isH1BLike && !isDependentLike && exemptYears > 0 && (
           <Callout type="info" label={`나의 상태 (${visa.label} 기준)`}>
             <strong>{arrivalNum}년</strong> 도착 기준:
             <br />
@@ -1683,8 +1769,8 @@ export default function TaxGuide() {
           </Callout>
         )}
 
-        {isValidYear && isH1B && (
-          <Callout type="info" label="나의 상태 (H-1B 기준)">
+        {isValidYear && isH1BLike && (
+          <Callout type="info" label={`나의 상태 (${visa.label} 기준)`}>
             <strong>{arrivalNum}년</strong> 도착 기준:
             <br />
             &bull; {arrivalNum}년에 183일 이상 체류했다면:{" "}
@@ -1702,12 +1788,12 @@ export default function TaxGuide() {
         )}
 
         <Callout type="tip" label="중요">
-          {isH1B ? (
+          {isH1BLike ? (
             <>
               <T tip="Resident Alien — 미국 세법상 거주 외국인.">RA</T>가 되면{" "}
               <T tip="TurboTax — 미국에서 가장 많이 사용되는 세금 신고 소프트웨어."><strong>TurboTax</strong></T>나{" "}
               <T tip="H&R Block — 미국의 대표적인 세금 신고 서비스/소프트웨어."><strong>H&R Block</strong></T>을 사용할 수 있습니다.
-              H-1B 첫 해에 NRA인 경우에만{" "}
+              {visa.label} 첫 해에 NRA인 경우에만{" "}
               <T tip="Sprintax — NRA(비거주 외국인) 전용 온라인 세금 신고 도구."><strong>Sprintax</strong></T>를 사용하세요.
             </>
           ) : (
@@ -1738,7 +1824,11 @@ export default function TaxGuide() {
 
     const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
+    const isL1 = visaType === "l1";
+    const isL2 = visaType === "l2";
+    const isH1BLike = isH1B || isL1;
     const isDependent = visaType === "dependent";
+    const isDependentLike = isDependent || isL2;
     const isJ1Researcher = visaType === "j1-researcher";
     const isStudent = visaType === "f1-student" || visaType === "j1-student";
 
@@ -1913,78 +2003,149 @@ export default function TaxGuide() {
           한미 조세조약 혜택
         </h1>
         <p className="text-sm mb-8" style={{ color: "var(--ink-muted)" }}>
-          {isDependent
-            ? "동반비자의 조세조약 적용"
-            : <>
-                <T tip={`Korea-US Tax Treaty ${visa.treatyArticle} — 한국에서 온 비자 소지자에게 적용되는 면세 조항입니다.`}>
-                  {visa.treatyArticle}
-                </T>{" "}— 소득세 면제의 핵심
-              </>
+          {isDependentLike
+            ? `${isL2 ? "L-2 " : ""}동반비자의 조세조약 적용`
+            : isL1
+              ? "L-1 주재원의 조세조약 및 FICA"
+              : <>
+                  <T tip={`Korea-US Tax Treaty ${visa.treatyArticle} — 한국에서 온 비자 소지자에게 적용되는 면세 조항입니다.`}>
+                    {visa.treatyArticle}
+                  </T>{" "}— 소득세 면제의 핵심
+                </>
           }
         </p>
 
-        {isDependent ? (
+        {isDependentLike ? (
           <>
             <Prose>
               <p>
-                동반비자(J-2, F-2, H-4) 소지자 본인에게는 별도의 조세조약 혜택이 직접 적용되지 않습니다.
-                조세조약의 면세 조항은 주비자 소지자(J-1, F-1 등)에게 적용됩니다.
+                {isL2 ? "L-2" : "동반비자(J-2, F-2, H-4)"} 소지자 본인에게는 별도의 조세조약 혜택이 직접 적용되지 않습니다.
+                조세조약의 면세 조항은 주비자 소지자({isL2 ? "L-1" : "J-1, F-1"} 등)에게 적용됩니다.
               </p>
             </Prose>
-            <Callout type="info" label="동반비자 소득세">
-              J-2 또는 H-4 EAD로 취업하여 소득이 있는 경우, 해당 소득에 대해 <strong>일반적인 세금 신고 의무</strong>가 있습니다.
+            <Callout type="info" label={`${isL2 ? "L-2" : "동반비자"} 소득세`}>
+              {isL2 ? "L-2 EAD" : "J-2 또는 H-4 EAD"}로 취업하여 소득이 있는 경우, 해당 소득에 대해 <strong>일반적인 세금 신고 의무</strong>가 있습니다.
               <br /><br />
               NRA인 경우 Form 1040-NR + Form 8843, RA인 경우 Form 1040을 제출합니다.
             </Callout>
+            {isL2 && (
+              <Callout type="info" label="L-2 EAD 취업 시 FICA">
+                L-2 EAD로 취업한 경우, L-1 주비자 소지자가 RA이므로 L-2도 보통 RA이며 <strong>FICA 납부 대상</strong>입니다.
+                <br /><br />
+                일반 근로자와 동일하게 Social Security 6.2% + Medicare 1.45%가 W-2에서 원천징수됩니다.
+              </Callout>
+            )}
             <Callout type="warn" label="Form 8843">
               소득이 없더라도 NRA인 동반비자는 <strong>Form 8843을 반드시 개별적으로 제출</strong>해야 합니다.
               배우자와 자녀 각각 1장씩 별도로 제출합니다.
             </Callout>
           </>
-        ) : isH1B ? (
+        ) : isH1BLike ? (
           <>
-            <Prose>
-              <p>
-                H-1B 소지자의 조세조약 혜택은 제한적입니다. 대학이나 연구기관에서 교수 또는 연구직으로 근무하는 경우에만{" "}
-                <T tip="Korea-US Tax Treaty Article 20(1) — 교수/연구 소득에 대한 면세 조항.">Article 20(1)</T>을 적용받을 수 있습니다.
-              </p>
-            </Prose>
+            {isL1 ? (
+              <>
+                <Prose>
+                  <p>
+                    L-1 소지자에게는 일반적인 조세조약 면세 혜택이 없습니다. H-1B와 달리 교수/연구직 조항(Article 20)도 적용되지 않습니다.
+                  </p>
+                </Prose>
 
-            <div
-              className="my-8 py-8 px-6 text-center"
-              style={{
-                background: "var(--ink)",
-                color: "var(--paper)",
-                borderRadius: 2,
-              }}
-            >
-              <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "var(--ink-faint)" }}>
-                조세조약 혜택
-              </p>
-              <p className="font-[family-name:var(--font-serif)] text-[clamp(18px,3vw,28px)] font-black leading-tight">
-                대학 교수/연구직인 경우만
-              </p>
-              <p className="font-[family-name:var(--font-serif)] text-[clamp(18px,3vw,28px)] font-black leading-tight" style={{ color: "var(--accent-soft)" }}>
-                Article 20(1) 적용 가능
-              </p>
-              <p className="text-[13px] mt-3" style={{ color: "var(--ink-faint)" }}>
-                일반 회사 근무 시 조세조약 혜택 없음
-              </p>
-            </div>
+                <div
+                  className="my-8 py-8 px-6 text-center"
+                  style={{
+                    background: "var(--ink)",
+                    color: "var(--paper)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "var(--ink-faint)" }}>
+                    조세조약 혜택
+                  </p>
+                  <p className="font-[family-name:var(--font-serif)] text-[clamp(18px,3vw,28px)] font-black leading-tight">
+                    일반적인 면세 혜택 없음
+                  </p>
+                  <p className="text-[13px] mt-3" style={{ color: "var(--ink-faint)" }}>
+                    L-1 주재원/파견에 적용되는 별도의 조세조약 면세 조항이 없습니다
+                  </p>
+                </div>
 
-            <Callout type="info" label="H-1B RA — Standard Deduction">
-              H-1B로 RA인 경우, 미국 시민과 동일하게 <strong><T tip="Standard Deduction — 과세소득에서 자동 차감되는 기본 공제액. 별도 증빙 없이 적용됩니다.">Standard Deduction</T>($14,600, 2024 기준 Single)</strong>을 적용받습니다.
-              <br /><br />
-              또한 RA는 <strong><T tip="Worldwide Income — 미국뿐 아니라 전 세계에서 발생한 모든 소득. 한국 급여, 이자, 배당, 임대소득 등을 모두 포함합니다.">전 세계 소득(Worldwide Income)</T></strong>에 대해 과세됩니다. 한국의 소득이 있다면 함께 신고해야 합니다.
-              단, <T tip="Foreign Tax Credit — 외국에서 납부한 세금을 미국 세금에서 공제받는 제도. 이중과세를 방지합니다.">Foreign Tax Credit</T>으로 이중과세를 방지할 수 있습니다.
-            </Callout>
+                <Callout type="info" label="L-1 RA — Standard Deduction">
+                  L-1으로 RA인 경우, 미국 시민과 동일하게 <strong><T tip="Standard Deduction — 과세소득에서 자동 차감되는 기본 공제액. 별도 증빙 없이 적용됩니다.">Standard Deduction</T>($15,700, 2025 기준 Single)</strong>을 적용받습니다.
+                  <br /><br />
+                  또한 RA는 <strong><T tip="Worldwide Income — 미국뿐 아니라 전 세계에서 발생한 모든 소득. 한국 급여, 이자, 배당, 임대소득 등을 모두 포함합니다.">전 세계 소득(Worldwide Income)</T></strong>에 대해 과세됩니다. 한국의 소득이 있다면 함께 신고해야 합니다.
+                  단, <T tip="Foreign Tax Credit — 외국에서 납부한 세금을 미국 세금에서 공제받는 제도. 이중과세를 방지합니다.">Foreign Tax Credit</T>으로 이중과세를 방지할 수 있습니다.
+                </Callout>
 
-            <SectionLabel>FICA (Social Security + Medicare)</SectionLabel>
-            <Callout type="warn" label="H-1B는 FICA 면제 대상이 아닙니다">
-              H-1B 소지자는 NRA든 RA든 <strong><T tip="Federal Insurance Contributions Act — 사회보장세(Social Security 6.2%)와 메디케어세(Medicare 1.45%)를 합친 세금. 급여에서 자동으로 원천징수됩니다.">FICA</T> 세금(Social Security 6.2% + Medicare 1.45%)을 납부</strong>해야 합니다.
-              <br /><br />
-              이는 F-1, J-1과의 중요한 차이점입니다. <T tip="W-2 — 고용주가 발급하는 연간 급여 소득 및 원천징수 내역서. 매년 1~2월에 발급됩니다.">W-2</T>에서 FICA가 <T tip="원천징수(Withholding) — 고용주가 급여에서 세금을 미리 공제하여 IRS에 납부하는 것.">원천징수</T>됩니다.
-            </Callout>
+                <SectionLabel>FICA 및 한미 사회보장협정</SectionLabel>
+                <Callout type="warn" label="L-1 FICA 납부 의무">
+                  L-1 소지자는 원칙적으로 <strong><T tip="Federal Insurance Contributions Act — 사회보장세(Social Security 6.2%)와 메디케어세(Medicare 1.45%)를 합친 세금.">FICA</T>(Social Security 6.2% + Medicare 1.45%)를 납부</strong>해야 합니다.
+                </Callout>
+                <Callout type="tip" label="Totalization Agreement (사회보장협정)">
+                  단, <strong>한국 본사에서 파견된 주재원</strong>은 한미 사회보장협정에 따라 FICA가 면제될 수 있습니다.
+                  <br /><br />
+                  <strong>파견 (본사 급여 유지, 5년 이내):</strong>
+                  <br />
+                  &bull; 국민연금공단에서 <strong>적용증명서(Certificate of Coverage)</strong> 발급
+                  <br />
+                  &bull; 미국 고용주에게 제출 &rarr; FICA 원천징수 면제
+                  <br />
+                  &bull; 한국 국민연금만 납부 (이중 납부 방지)
+                  <br /><br />
+                  <strong>현지 채용 (미국 법인 직접 고용):</strong>
+                  <br />
+                  &bull; 사회보장협정 적용 대상이 <strong>아님</strong>
+                  <br />
+                  &bull; 미국 FICA 정상 납부 의무
+                  <br /><br />
+                  적용증명서는 파견 전 또는 파견 초기에 <strong>국민연금공단 국제협력팀</strong>에 신청합니다.
+                </Callout>
+              </>
+            ) : (
+              <>
+                <Prose>
+                  <p>
+                    H-1B 소지자의 조세조약 혜택은 제한적입니다. 대학이나 연구기관에서 교수 또는 연구직으로 근무하는 경우에만{" "}
+                    <T tip="Korea-US Tax Treaty Article 20(1) — 교수/연구 소득에 대한 면세 조항.">Article 20(1)</T>을 적용받을 수 있습니다.
+                  </p>
+                </Prose>
+
+                <div
+                  className="my-8 py-8 px-6 text-center"
+                  style={{
+                    background: "var(--ink)",
+                    color: "var(--paper)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "var(--ink-faint)" }}>
+                    조세조약 혜택
+                  </p>
+                  <p className="font-[family-name:var(--font-serif)] text-[clamp(18px,3vw,28px)] font-black leading-tight">
+                    대학 교수/연구직인 경우만
+                  </p>
+                  <p className="font-[family-name:var(--font-serif)] text-[clamp(18px,3vw,28px)] font-black leading-tight" style={{ color: "var(--accent-soft)" }}>
+                    Article 20(1) 적용 가능
+                  </p>
+                  <p className="text-[13px] mt-3" style={{ color: "var(--ink-faint)" }}>
+                    일반 회사 근무 시 조세조약 혜택 없음
+                  </p>
+                </div>
+
+                <Callout type="info" label="H-1B RA — Standard Deduction">
+                  H-1B로 RA인 경우, 미국 시민과 동일하게 <strong><T tip="Standard Deduction — 과세소득에서 자동 차감되는 기본 공제액. 별도 증빙 없이 적용됩니다.">Standard Deduction</T>($14,600, 2024 기준 Single)</strong>을 적용받습니다.
+                  <br /><br />
+                  또한 RA는 <strong><T tip="Worldwide Income — 미국뿐 아니라 전 세계에서 발생한 모든 소득. 한국 급여, 이자, 배당, 임대소득 등을 모두 포함합니다.">전 세계 소득(Worldwide Income)</T></strong>에 대해 과세됩니다. 한국의 소득이 있다면 함께 신고해야 합니다.
+                  단, <T tip="Foreign Tax Credit — 외국에서 납부한 세금을 미국 세금에서 공제받는 제도. 이중과세를 방지합니다.">Foreign Tax Credit</T>으로 이중과세를 방지할 수 있습니다.
+                </Callout>
+
+                <SectionLabel>FICA (Social Security + Medicare)</SectionLabel>
+                <Callout type="warn" label="H-1B는 FICA 면제 대상이 아닙니다">
+                  H-1B 소지자는 NRA든 RA든 <strong><T tip="Federal Insurance Contributions Act — 사회보장세(Social Security 6.2%)와 메디케어세(Medicare 1.45%)를 합친 세금. 급여에서 자동으로 원천징수됩니다.">FICA</T> 세금(Social Security 6.2% + Medicare 1.45%)을 납부</strong>해야 합니다.
+                  <br /><br />
+                  이는 F-1, J-1과의 중요한 차이점입니다. <T tip="W-2 — 고용주가 발급하는 연간 급여 소득 및 원천징수 내역서. 매년 1~2월에 발급됩니다.">W-2</T>에서 FICA가 <T tip="원천징수(Withholding) — 고용주가 급여에서 세금을 미리 공제하여 IRS에 납부하는 것.">원천징수</T>됩니다.
+                </Callout>
+              </>
+            )}
           </>
         ) : (
           <>
@@ -2155,7 +2316,9 @@ export default function TaxGuide() {
               ? "한국 관련 조항은 Article 21을 참조하세요."
               : isH1B
                 ? "한국 관련 교수/연구 조항은 Article 20을 참조하세요."
-                : ""}
+                : isL1
+                  ? "L-1에는 적용되는 별도의 면세 조항이 없습니다."
+                  : ""}
           {visa.form8233 && (
             <>
               <br /><br />
@@ -2312,11 +2475,12 @@ export default function TaxGuide() {
           </Callout>
         )}
 
-        {visaType === "dependent" && (
+        {(visaType === "dependent" || visaType === "l2") && (
           <Callout type="info" label="동반비자 서류 참고">
-            주비자 소지자의 비자 서류(<T tip="DS-2019 — J-1 비자 스폰서 기관이 발급하는 교환방문 프로그램 참가 확인 서류.">DS-2019</T>, <T tip="I-20 — F-1 학생의 입학허가를 증명하는 서류. 학교(SEVP 인증 기관)에서 발급합니다.">I-20</T> 등) 사본이 필요합니다.
+            주비자 소지자의 비자 서류({visaType === "l2" ? "I-797 승인 통지서" : <>
+              <T tip="DS-2019 — J-1 비자 스폰서 기관이 발급하는 교환방문 프로그램 참가 확인 서류.">DS-2019</T>, <T tip="I-20 — F-1 학생의 입학허가를 증명하는 서류. 학교(SEVP 인증 기관)에서 발급합니다.">I-20</T></>} 등) 사본이 필요합니다.
             <br /><br />
-            <T tip="EAD (Employment Authorization Document) — 취업 허가증. 동반비자(J-2, H-4 등) 소지자가 미국에서 일하기 위해 필요한 서류입니다.">EAD</T>(Employment Authorization Document)로 취업한 경우, EAD 사본과 W-2도 준비하세요.
+            <T tip="EAD (Employment Authorization Document) — 취업 허가증. 동반비자(J-2, H-4, L-2 등) 소지자가 미국에서 일하기 위해 필요한 서류입니다.">EAD</T>(Employment Authorization Document)로 취업한 경우, EAD 사본과 W-2도 준비하세요.
           </Callout>
         )}
       </>
@@ -2332,7 +2496,11 @@ export default function TaxGuide() {
 
     const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
+    const isL1 = visaType === "l1";
+    const isL2 = visaType === "l2";
+    const isH1BLike = isH1B || isL1;
     const isDependent = visaType === "dependent";
+    const isDependentLike = isDependent || isL2;
     const isF1 = visaType === "f1-student";
 
     if (isResident) {
@@ -2586,14 +2754,14 @@ export default function TaxGuide() {
 
         <SectionLabel>신고 케이스 확인</SectionLabel>
 
-        {isH1B ? (
+        {isH1BLike ? (
           <div
             className="grid grid-cols-1 gap-px my-4 overflow-hidden"
             style={{ background: "var(--rule)", borderRadius: 2 }}
           >
             <div className="p-5" style={{ background: "var(--accent-bg)" }}>
               <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--accent)" }}>
-                대부분의 H-1B — RA
+                대부분의 {visa.label} — RA
               </p>
               <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
                 <Code>Form 1040</Code> 제출. TurboTax, H&R Block 등 사용 가능.
@@ -2604,7 +2772,7 @@ export default function TaxGuide() {
             </div>
             <div className="p-5" style={{ background: "var(--paper)" }}>
               <p className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--ink-muted)" }}>
-                H-1B 첫 해 NRA (183일 미만 체류)
+                {visa.label} 첫 해 NRA (183일 미만 체류)
               </p>
               <p className="text-[14px]" style={{ color: "var(--ink-light)" }}>
                 <Code>Form 1040-NR</Code> 제출, 또는 First-Year Choice로 <Code>Form 1040</Code>.
@@ -2614,7 +2782,7 @@ export default function TaxGuide() {
               </p>
             </div>
           </div>
-        ) : isDependent ? (
+        ) : isDependentLike ? (
           <div
             className="grid grid-cols-1 gap-px my-4 overflow-hidden"
             style={{ background: "var(--rule)", borderRadius: 2 }}
@@ -2695,7 +2863,7 @@ export default function TaxGuide() {
         )}
 
         {/* Form 8843 section */}
-        {!isH1B && (
+        {!isH1BLike && (
           <>
             <SectionLabel>01 — Form 8843 (모든 NRA 필수)</SectionLabel>
             <Prose>
@@ -2708,7 +2876,7 @@ export default function TaxGuide() {
             <ul className="mt-3 space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
               {[
                 "소득 유무와 관계없이 모든 NRA 필수 제출",
-                isDependent
+                isDependentLike
                   ? "동반비자 본인도 개별적으로 1장 제출 (주비자 소지자와 별도)"
                   : "배우자(동반비자)와 부양가족도 각각 1장씩 별도 제출",
                 "인적 사항, 비자 정보, 체류 기간 등을 기록",
@@ -2725,7 +2893,7 @@ export default function TaxGuide() {
         )}
 
         {/* Form 1040-NR section */}
-        {!isH1B && (
+        {!isH1BLike && (
           <>
             <SectionLabel>02 — Form 1040-NR (NRA + 소득 있는 경우)</SectionLabel>
             <Prose>
@@ -2754,7 +2922,7 @@ export default function TaxGuide() {
               </li>
             </ul>
 
-            {!isH1B && (
+            {!isH1BLike && (
               <Callout type="warn" label="주의">
                 <strong>TurboTax, H&R Block은 NRA가 사용할 수 없습니다.</strong> 이 소프트웨어들은 Resident 전용입니다.
               </Callout>
@@ -2762,19 +2930,19 @@ export default function TaxGuide() {
           </>
         )}
 
-        {/* H-1B RA specific */}
-        {isH1B && (
+        {/* H-1B / L-1 RA specific */}
+        {isH1BLike && (
           <>
-            <SectionLabel>01 — Form 1040 (H-1B RA)</SectionLabel>
+            <SectionLabel>01 — Form 1040 ({visa.label} RA)</SectionLabel>
             <Prose>
               <p>
-                대부분의 H-1B 소지자는 RA로서 <Code>Form 1040</Code>을 사용합니다.
+                대부분의 {visa.label} 소지자는 RA로서 <Code>Form 1040</Code>을 사용합니다.
                 미국 시민과 동일한 절차로 신고합니다.
               </p>
             </Prose>
             <ul className="mt-3 space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
               {[
-                "Standard Deduction: $14,600 (2024 기준, Single)",
+                "Standard Deduction: $15,700 (2025 기준, Single)",
                 "전 세계 소득(Worldwide Income)에 대해 과세",
                 "한국 소득이 있다면 함께 신고 (Foreign Tax Credit으로 이중과세 방지)",
                 "FICA(Social Security + Medicare) 원천징수 — 환급 대상 아님",
@@ -2798,16 +2966,28 @@ export default function TaxGuide() {
             </Callout>
 
             <Callout type="warn" label="FICA는 환급 대상이 아닙니다">
-              H-1B 소지자의 FICA(Social Security 6.2% + Medicare 1.45%)는 정상적인 원천징수입니다.
+              {visa.label} 소지자의 FICA(Social Security 6.2% + Medicare 1.45%)는 정상적인 원천징수입니다.
               F-1, J-1처럼 FICA 면제 대상이 아니므로 <strong>FICA 환급을 신청하면 안 됩니다</strong>.
             </Callout>
+
+            {isL1 && (
+              <Callout type="warn" label="L-1 RA — FBAR/Form 8938 대비">
+                L-1 주재원은 도착 첫 해부터 RA가 되는 경우가 많아 <strong>해외계좌 신고 의무</strong>가 바로 발생할 수 있습니다.
+                <br /><br />
+                &bull; <strong>FBAR (FinCEN 114)</strong>: 한국 은행·증권·보험 계좌 합산 $10,000 초과 시 제출 (마감: 4/15, 자동 연장 10/15)
+                <br />
+                &bull; <strong>Form 8938 (FATCA)</strong>: 해외 금융자산이 threshold 초과 시 1040과 함께 제출
+                <br /><br />
+                한국에 계좌가 있는 L-1 주재원은 <strong>도착 첫 해부터</strong> 이 보고 의무를 확인하세요.
+              </Callout>
+            )}
           </>
         )}
 
         {/* Tools section */}
-        <SectionLabel>{isH1B ? "02" : "03"} — 작성 도구</SectionLabel>
+        <SectionLabel>{isH1BLike ? "02" : "03"} — 작성 도구</SectionLabel>
 
-        {isH1B ? (
+        {isH1BLike ? (
           <div
             className="grid grid-cols-1 sm:grid-cols-2 gap-px my-4 overflow-hidden"
             style={{ background: "var(--rule)", borderRadius: 2 }}
@@ -2869,7 +3049,7 @@ export default function TaxGuide() {
         )}
 
         <Callout type="tip" label="팁">
-          {isH1B
+          {isH1BLike
             ? "TurboTax Free Edition은 간단한 세금 신고(W-2 소득만)에 무료로 사용할 수 있습니다. 복잡한 상황(투자소득, 해외소득 등)은 유료 버전이 필요합니다."
             : <>대부분의 대학에서 Sprintax 또는 GLACIER Tax Prep의 무료 코드를 제공합니다.
               학교의 <T tip="International Office — 유학생/방문연구원을 지원하는 학교 부서.">International Office</T> 또는 HR에 먼저 문의하세요.</>
@@ -2891,27 +3071,35 @@ export default function TaxGuide() {
           </Callout>
         )}
 
-        {/* Dependent EAD note */}
-        {isDependent && (
+        {/* Dependent / L-2 EAD note */}
+        {isDependentLike && (
           <Callout type="info" label="EAD 취업 시 FICA">
-            J-2 EAD로 취업한 경우: 주비자 소지자가 NRA라면 동반비자도 NRA이지만, <strong>J-2 EAD 취업 소득에는 FICA가 적용</strong>됩니다.
-            <br /><br />
-            H-4 EAD로 취업한 경우: H-1B 주비자 소지자가 RA이므로 동반비자도 보통 RA이며, <strong>FICA 납부 대상</strong>입니다.
+            {isL2 ? (
+              <>L-2 EAD로 취업한 경우: L-1 주비자 소지자가 RA이므로 L-2도 보통 RA이며, <strong>FICA 납부 대상</strong>입니다.</>
+            ) : (
+              <>
+                J-2 EAD로 취업한 경우: 주비자 소지자가 NRA라면 동반비자도 NRA이지만, <strong>J-2 EAD 취업 소득에는 FICA가 적용</strong>됩니다.
+                <br /><br />
+                H-4 EAD로 취업한 경우: H-1B 주비자 소지자가 RA이므로 동반비자도 보통 RA이며, <strong>FICA 납부 대상</strong>입니다.
+              </>
+            )}
           </Callout>
         )}
 
-        <SectionLabel>{isH1B ? "03" : "04"} — 작성 시 필요한 정보</SectionLabel>
+        <SectionLabel>{isH1BLike ? "03" : "04"} — 작성 시 필요한 정보</SectionLabel>
         <ul className="space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
           {[
             "여권 정보 (이름, 번호, 만료일)",
             ...(visaType === "f1-student" ? ["I-20 정보 (SEVIS ID, 학교명)"] : []),
             ...(visaType === "j1-researcher" || visaType === "j1-student" ? ["DS-2019 정보 (프로그램 번호, 스폰서 기관)"] : []),
-            ...(visaType === "dependent" ? ["주비자 소지자의 비자 서류 정보"] : []),
+            ...(visaType === "dependent" || visaType === "l2" ? ["주비자 소지자의 비자 서류 정보"] : []),
+            ...(visaType === "l1" ? ["I-797 승인 통지서 정보"] : []),
             "I-94 기록 (입국일, 출국일)",
             "미국 입국/출국 날짜 — 연도별 정리 필요",
-            isH1B ? "SSN (Social Security Number)" : "SSN (Social Security Number) 또는 ITIN",
+            isH1BLike ? "SSN (Social Security Number)" : "SSN (Social Security Number) 또는 ITIN",
             "W-2 (급여 소득, 원천징수 금액)",
-            ...(!isH1B ? ["1042-S (조세조약 적용 소득, 해당 시)"] : []),
+            ...(!isH1BLike ? ["1042-S (조세조약 적용 소득, 해당 시)"] : []),
+            ...(visaType === "l1" ? ["사회보장협정 적용증명서 (해당 시)"] : []),
             "1099-INT / 1099-DIV / 1099-NEC (해당 시)",
           ].map((item, i) => (
             <li key={i} className="flex items-baseline gap-3">
@@ -2922,7 +3110,7 @@ export default function TaxGuide() {
         </ul>
 
         <Callout type="info" label="E-file">
-          {isH1B
+          {isH1BLike
             ? "TurboTax, H&R Block 모두 e-file을 지원합니다. 우편보다 빠르고 안전하며, 환급도 2~3주 내에 받을 수 있습니다."
             : <>Sprintax를 통해 연방세를{" "}
               <T tip="Electronic Filing — 세금 서류를 온라인으로 전자 제출하는 것.">e-file</T>
@@ -2995,7 +3183,7 @@ export default function TaxGuide() {
         <ul className="space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
           {[
             "각 주마다 양식과 절차가 다름",
-            isResident || visaType === "h1b"
+            isResident || visaType === "h1b" || visaType === "l1"
               ? "TurboTax, H&R Block, FreeTaxUSA 등에서 주세도 함께 작성 가능"
               : "NRA: Sprintax 사용 추천 (자동으로 해당 주 양식 작성, ~$25-35)",
             "직접 작성 시: 거주 주의 Department of Revenue 웹사이트에서 양식 다운로드",
@@ -3015,15 +3203,15 @@ export default function TaxGuide() {
         ) : (
           <Callout type="info" label="조세조약 + 주세">
             대부분의 주에서 한미 조세조약의 면세 혜택이 주세에도 적용됩니다.
-            {visaType === "h1b"
-              ? " H-1B RA의 경우 주세에서는 일반적인 Standard Deduction이 적용됩니다."
+            {visaType === "h1b" || visaType === "l1"
+              ? ` ${visaType === "l1" ? "L-1" : "H-1B"} RA의 경우 주세에서는 일반적인 Standard Deduction이 적용됩니다.`
               : " Sprintax를 사용하면 이를 자동으로 처리해 줍니다."}
           </Callout>
         )}
 
-        <SectionLabel>{isResident || visaType === "h1b" ? "주세 신고 방법" : "Sprintax로 주세 신고하기"}</SectionLabel>
+        <SectionLabel>{isResident || visaType === "h1b" || visaType === "l1" ? "주세 신고 방법" : "Sprintax로 주세 신고하기"}</SectionLabel>
         <div className="space-y-3">
-          {(isResident || visaType === "h1b"
+          {(isResident || visaType === "h1b" || visaType === "l1"
             ? [
                 "TurboTax, H&R Block, 또는 FreeTaxUSA에서 연방세와 함께 작성",
                 "주세 양식이 자동으로 생성됨",
@@ -3165,9 +3353,9 @@ export default function TaxGuide() {
           작성한 세금 서류, 어디로 어떻게 보내나
         </p>
 
-        {visaType === "h1b" && (
+        {(visaType === "h1b" || visaType === "l1") && (
           <Callout type="tip" label="e-file 추천">
-            H-1B RA라면 TurboTax 또는 H&R Block에서 <strong>e-file</strong>로 바로 제출할 수 있습니다.
+            {visaType === "l1" ? "L-1" : "H-1B"} RA라면 TurboTax 또는 H&R Block에서 <strong>e-file</strong>로 바로 제출할 수 있습니다.
             우편 발송이 필요 없어 가장 빠르고 안전합니다.
           </Callout>
         )}
@@ -3231,7 +3419,7 @@ export default function TaxGuide() {
               연방세 &rarr; IRS
             </p>
             <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
-              {visaType === "h1b" ? (
+              {visaType === "h1b" || visaType === "l1" ? (
                 <>
                   <li><Code>1040</Code> (또는 <Code>1040-NR</Code>)</li>
                   <li>W-2 원본 첨부</li>
@@ -3254,7 +3442,7 @@ export default function TaxGuide() {
             <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
               <li>주 세금 양식 (주마다 다름)</li>
               <li>W-2 사본 첨부</li>
-              <li>주소: {visaType === "h1b" ? "소프트웨어" : "Sprintax"} 가이드에 기재됨</li>
+              <li>주소: {visaType === "h1b" || visaType === "l1" ? "소프트웨어" : "Sprintax"} 가이드에 기재됨</li>
               <li>연방세와 <strong>별도 봉투</strong>로 발송</li>
             </ul>
           </div>
@@ -3334,7 +3522,7 @@ export default function TaxGuide() {
         </div>
 
         <Callout type="tip" label="E-file">
-          {visaType === "h1b"
+          {visaType === "h1b" || visaType === "l1"
             ? "TurboTax 또는 H&R Block에서 e-file하면 우편 발송 없이 바로 제출됩니다. 24시간 내 접수 확인, 2~3주 내 환급 가능합니다."
             : <>Sprintax에서 연방세{" "}
               <T tip="e-file: 세금 서류를 온라인으로 전자 제출.">e-file</T>
@@ -3352,6 +3540,8 @@ export default function TaxGuide() {
   function Step7() {
     const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
+    const isL1 = visaType === "l1";
+    const isH1BLike = isH1B || isL1;
 
     return (
       <>
@@ -3396,13 +3586,13 @@ export default function TaxGuide() {
               <T tip="Filing Status — 세금 신고 시의 납세자 상태 (Single, Married 등).">
                 Filing Status
               </T>
-              {" "}({isResident || isH1B ? "세금 소프트웨어" : "Sprintax"} 서류에서 확인)
+              {" "}({isResident || isH1BLike ? "세금 소프트웨어" : "Sprintax"} 서류에서 확인)
             </li>
             <li>&bull;{" "}
               <T tip="Refund Amount — 환급 예상 금액.">
                 Refund Amount
               </T>
-              {" "}({isResident || isH1B ? "세금 소프트웨어" : "Sprintax"} 서류에서 확인)
+              {" "}({isResident || isH1BLike ? "세금 소프트웨어" : "Sprintax"} 서류에서 확인)
             </li>
           </ul>
         </div>
@@ -3498,10 +3688,10 @@ export default function TaxGuide() {
                     fix: "같은 소득에 FTC와 FEIE를 동시에 적용할 수 없습니다",
                   },
                 ]
-              : isH1B
+              : isH1BLike
                 ? [
                     {
-                      mistake: "H-1B RA인데 NRA 소프트웨어(Sprintax)로 신고",
+                      mistake: `${isL1 ? "L-1" : "H-1B"} RA인데 NRA 소프트웨어(Sprintax)로 신고`,
                       fix: "RA는 TurboTax, H&R Block 등 일반 소프트웨어 사용",
                     },
                     {
@@ -3510,8 +3700,18 @@ export default function TaxGuide() {
                     },
                     {
                       mistake: "FICA 환급 잘못 신청",
-                      fix: "H-1B는 FICA 면제 대상이 아닙니다 — 잘못 신청하면 문제 발생",
+                      fix: `${isL1 ? "L-1" : "H-1B"}는 FICA 면제 대상이 아닙니다 — 잘못 신청하면 문제 발생`,
                     },
+                    ...(isL1 ? [
+                      {
+                        mistake: "Totalization Agreement(사회보장협정) 미확인",
+                        fix: "한국 파견 주재원은 적용증명서로 FICA 면제 가능 — 미확인 시 이중 납부",
+                      },
+                      {
+                        mistake: "FBAR/Form 8938 미제출",
+                        fix: "RA는 해외 금융계좌 합산 $10,000 초과 시 FBAR 필수 — 도착 첫 해부터 확인",
+                      },
+                    ] : []),
                   ]
                 : [
                     {
