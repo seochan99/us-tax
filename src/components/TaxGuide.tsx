@@ -816,7 +816,7 @@ export default function TaxGuide() {
         {/* ---- Content ---- */}
         <main
           className={`pt-8 pb-32 ${direction === "left" ? "animate-step-left" : direction === "right" ? "animate-step-right" : "animate-step"}`}
-          key={`${step}-${visaType}-${direction}`}
+          key={step}
         >
           {step === 0 && <Step0 />}
           {step === 1 && <Step1 />}
@@ -930,10 +930,11 @@ export default function TaxGuide() {
               <button
                 key={opt.key}
                 onClick={() => {
+                  setDirection("none");
                   setVisaType(opt.key);
                   setCheckedDocs(new Set());
                 }}
-                className="text-left p-4 transition-all"
+                className="visa-card text-left p-4"
                 style={{
                   background: selected ? "var(--ink)" : "var(--paper)",
                   border: `1.5px solid ${selected ? "var(--ink)" : "var(--rule)"}`,
@@ -966,10 +967,11 @@ export default function TaxGuide() {
               <button
                 key={opt.key}
                 onClick={() => {
+                  setDirection("none");
                   setVisaType(opt.key);
                   setCheckedDocs(new Set());
                 }}
-                className="text-left p-4 transition-all"
+                className="visa-card text-left p-4"
                 style={{
                   background: selected ? "var(--ink)" : "var(--paper)",
                   border: `1.5px solid ${selected ? "var(--ink)" : "var(--rule)"}`,
@@ -994,6 +996,7 @@ export default function TaxGuide() {
           })}
         </div>
 
+        <div key={visaType || "empty"} className={visaType ? "animate-visa-content" : ""}>
         {!visaType && (
           <Callout type="info" label="안내">
             먼저 비자 또는 신분을 선택하면 맞춤형 세금 가이드가 표시됩니다.
@@ -1357,7 +1360,11 @@ export default function TaxGuide() {
             <div className="flex items-center gap-4">
               <select
                 value={arrivalYear}
-                onChange={(e) => setArrivalYear(e.target.value)}
+                onChange={(e) => {
+                  const y = window.scrollY;
+                  setArrivalYear(e.target.value);
+                  requestAnimationFrame(() => window.scrollTo(0, y));
+                }}
                 className="px-3 py-2.5 text-[15px] font-[family-name:var(--font-mono)] font-bold outline-none transition-colors cursor-pointer"
                 style={{
                   background: "var(--paper)",
@@ -1393,6 +1400,7 @@ export default function TaxGuide() {
             </Callout>
           </>
         ) : null}
+        </div>
       </>
     );
   }

@@ -74,38 +74,79 @@ body::before {
   }
 }
 
-@keyframes slideInLeft {
+@keyframes stepLeft {
   from {
     opacity: 0;
-    transform: translateX(40px);
+    transform: translateX(16px) scale(0.99);
+  }
+  50% {
+    opacity: 1;
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
-@keyframes slideInRight {
+@keyframes stepRight {
   from {
     opacity: 0;
-    transform: translateX(-40px);
+    transform: translateX(-16px) scale(0.99);
+  }
+  50% {
+    opacity: 1;
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
 .animate-step {
-  animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: fadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .animate-step-left {
-  animation: slideInLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: stepLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .animate-step-right {
-  animation: slideInRight 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: stepRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Visa card buttons */
+.visa-card {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              background 0.2s ease,
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+.visa-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.visa-card:active {
+  transform: scale(0.97);
+  transition-duration: 0.1s;
+}
+
+/* Visa-dependent content fade */
+@keyframes contentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-visa-content {
+  animation: contentFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes checklistComplete {
