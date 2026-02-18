@@ -407,6 +407,7 @@ function T({ children, tip }: { children: ReactNode; tip: string }) {
   const [pos, setPos] = useState<{ top: number; left: number; arrowLeft: number; below: boolean } | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
   const [mounted, setMounted] = useState(false);
+  const isTouch = useRef(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -456,13 +457,14 @@ function T({ children, tip }: { children: ReactNode; tip: string }) {
         tabIndex={0}
         role="button"
         aria-label={`${typeof children === "string" ? children : "용어"} 설명 보기`}
+        onTouchStart={() => { isTouch.current = true; }}
         onClick={(e) => {
           e.stopPropagation();
           if (open) handleClose();
           else handleOpen();
         }}
-        onMouseEnter={handleOpen}
-        onMouseLeave={handleClose}
+        onMouseEnter={() => { if (!isTouch.current) handleOpen(); }}
+        onMouseLeave={() => { if (!isTouch.current) handleClose(); }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
@@ -477,10 +479,11 @@ function T({ children, tip }: { children: ReactNode; tip: string }) {
       {mounted && open && pos && createPortal(
         <>
           {/* Mobile backdrop — tap to dismiss */}
-          <div className="tt-backdrop" onClick={handleClose} />
+          <div className="tt-backdrop" onClick={(e) => { e.stopPropagation(); handleClose(); }} />
           <span
             className="tt-portal"
             role="tooltip"
+            onClick={(e) => e.stopPropagation()}
             style={{
               position: "fixed",
               ...(pos.below
