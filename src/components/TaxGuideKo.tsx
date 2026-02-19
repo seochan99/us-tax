@@ -48,7 +48,7 @@ const STEPS = [
   "환급 추적",
 ];
 
-type VisaType = "f1-student" | "j1-researcher" | "j1-student" | "h1b" | "l1" | "l2" | "dependent" | "green-card" | "citizen";
+type VisaType = "f1-student" | "j1-researcher" | "j1-student" | "h1b" | "l1" | "l2" | "e2" | "dependent" | "green-card" | "citizen";
 
 interface DocItem {
   id: string;
@@ -227,6 +227,30 @@ const VISA_CONFIGS: Record<VisaType, VisaConfig> = {
     ],
     form8233: false,
   },
+  "e2": {
+    label: "E-2 Treaty Investor",
+    labelKo: "투자/사업비자",
+    desc: "E-2 비자로 미국에서 사업 운영 또는 투자 중인 조약투자자",
+    sptExemptYears: 0,
+    treatyArticle: "",
+    treatyBenefit: "일반적인 면세 혜택 없음 — E-2 소지자에게 적용되는 별도의 조세조약 면세 조항이 없습니다",
+    ficaExempt: false,
+    nraToolsOnly: false,
+    docs: [
+      { id: "passport", label: "여권 (Passport)", desc: "유효한 여권 원본" },
+      { id: "e2approval", label: "E-2 비자 승인 서류", desc: "E-2 비자 청원 승인 서류 및 사업 계획서" },
+      { id: "i94", label: "I-94 출입국 기록", desc: "i94.cbp.dhs.gov 에서 출력" },
+      { id: "entrydates", label: "미국 입국/출국 날짜 (연도별)", desc: "여권 도장 또는 I-94 Travel History 에서 연도별 입출국일 확인" },
+      { id: "ssn", label: "SSN (또는 ITIN)", desc: "Social Security Number. 없으면 ITIN(Form W-7)으로 대체 가능" },
+      { id: "bizreg", label: "사업자등록/LLC 서류", desc: "LLC Articles of Organization, EIN 확인서, Operating Agreement 등" },
+      { id: "w2", label: "W-2 (해당 시)", desc: "본인 회사 또는 타 고용주에서 급여를 받는 경우" },
+      { id: "1099misc", label: "1099 시리즈 (해당 시)", desc: "1099-NEC, 1099-MISC, 1099-INT, 1099-DIV 등" },
+      { id: "schedulec", label: "Schedule C 관련 자료 (해당 시)", desc: "사업 수입·지출 내역, 영수증, 장부 — 개인사업(Sole Proprietor)인 경우" },
+      { id: "form5472", label: "Form 5472 관련 자료 (해당 시)", desc: "외국인 소유 LLC인 경우 — 거래 내역 (reportable transactions)" },
+      { id: "prev", label: "전년도 세금 신고서 사본", desc: "이전에 신고한 적이 있는 경우" },
+    ],
+    form8233: false,
+  },
   "dependent": {
     label: "Dependent (J-2/F-2/H-4)",
     labelKo: "동반비자",
@@ -345,6 +369,8 @@ interface SearchEntry {
   keywords: string[];
 }
 
+type Language = "ko" | "en";
+
 const SEARCH_INDEX: SearchEntry[] = [
   { term: "SPT", termKo: "실질 체류 테스트", desc: "Substantial Presence Test — 183일 기준 거주자 판정", step: 1, keywords: ["substantial presence", "183일", "거주자 판정", "체류일수"] },
   { term: "NRA", termKo: "비거주 외국인", desc: "Non-Resident Alien — 세법상 비거주자", step: 1, keywords: ["non-resident alien", "비거주자", "외국인"] },
@@ -397,6 +423,10 @@ const SEARCH_INDEX: SearchEntry[] = [
   { term: "L-1 (주재원/파견)", termKo: "주재원 비자", desc: "L-1 비자 — 회사 내 전근(Intracompany Transferee), SPT 면제 없음", step: 0, keywords: ["l-1", "l1", "주재원", "파견", "intracompany", "transferee", "l-1a", "l-1b"] },
   { term: "L-2 (동반비자)", termKo: "L-2 동반비자", desc: "L-1 소지자의 배우자/자녀 동반비자", step: 0, keywords: ["l-2", "l2", "l2 동반", "l-2 동반", "l비자 동반"] },
   { term: "Totalization Agreement", termKo: "한미 사회보장협정", desc: "한미 사회보장협정 — L-1 파견 주재원의 FICA 면제 가능", step: 2, keywords: ["totalization", "사회보장협정", "totalization agreement", "국민연금", "fica 면제", "파견"] },
+  { term: "E-2 (투자/사업비자)", termKo: "투자비자", desc: "E-2 비자 — 조약투자자(Treaty Investor), SPT 면제 없음", step: 0, keywords: ["e-2", "e2", "투자비자", "사업비자", "treaty investor", "투자", "사업"] },
+  { term: "Schedule C (사업소득)", termKo: "사업소득 명세", desc: "개인사업(Sole Proprietor)의 사업 수입·지출을 보고하는 스케줄", step: 4, keywords: ["schedule c", "사업소득", "sole proprietor", "개인사업", "자영업", "business income"] },
+  { term: "Form 5472 (외국인 소유 LLC)", termKo: "외국인 LLC 보고", desc: "외국인 소유 1인 LLC — pro forma 1120 + 5472 필수, 미제출 시 $25,000 페널티", step: 4, keywords: ["5472", "form 5472", "외국인 llc", "foreign-owned llc", "$25,000", "페널티", "pro forma 1120"] },
+  { term: "Self-Employment Tax", termKo: "자영업세", desc: "자영업자의 Social Security + Medicare 세금 (Schedule SE)", step: 4, keywords: ["self-employment tax", "자영업세", "se tax", "schedule se", "social security", "medicare", "15.3%"] },
 ];
 
 /* ================================================================
@@ -597,7 +627,13 @@ function Prose({ children }: { children: ReactNode }) {
    MAIN COMPONENT
    ================================================================ */
 
-export default function TaxGuide() {
+export default function TaxGuide({
+  language,
+  onLanguageChange,
+}: {
+  language: Language;
+  onLanguageChange: (next: Language) => void;
+}) {
   const [step, setStep] = useState(() => loadFromLS(LS_KEYS.step, 0));
   const [checkedDocs, setCheckedDocs] = useState<Set<string>>(
     () => new Set(loadFromLS<string[]>(LS_KEYS.checkedDocs, [])),
@@ -741,7 +777,7 @@ export default function TaxGuide() {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-1.5 px-2 py-1 rounded transition-colors"
@@ -755,11 +791,44 @@ export default function TaxGuide() {
               <span className="hidden sm:inline font-[family-name:var(--font-mono)] text-[10px]" style={{ color: "var(--ink-faint)" }}>⌘K</span>
             </button>
             <span
-              className="font-[family-name:var(--font-mono)] text-[11px] tabular-nums"
+              className="hidden sm:inline font-[family-name:var(--font-mono)] text-[11px] tabular-nums"
               style={{ color: "var(--ink-faint)" }}
             >
               {String(step + 1).padStart(2, "0")}/{String(STEPS.length).padStart(2, "0")}
             </span>
+            <div
+              className="flex items-center rounded-md overflow-hidden"
+              style={{ border: "1px solid var(--rule)" }}
+              aria-label="언어 선택"
+            >
+              <button
+                onClick={() => onLanguageChange("ko")}
+                className="px-2 py-1 font-[family-name:var(--font-mono)] text-[10px] font-bold"
+                style={{
+                  border: "none",
+                  cursor: "pointer",
+                  color: language === "ko" ? "var(--paper)" : "var(--ink-faint)",
+                  background: language === "ko" ? "var(--ink)" : "transparent",
+                }}
+                aria-pressed={language === "ko"}
+              >
+                KO
+              </button>
+              <button
+                onClick={() => onLanguageChange("en")}
+                className="px-2 py-1 font-[family-name:var(--font-mono)] text-[10px] font-bold"
+                style={{
+                  border: "none",
+                  borderLeft: "1px solid var(--rule)",
+                  cursor: "pointer",
+                  color: language === "en" ? "var(--paper)" : "var(--ink-faint)",
+                  background: language === "en" ? "var(--ink)" : "transparent",
+                }}
+                aria-pressed={language === "en"}
+              >
+                EN
+              </button>
+            </div>
           </div>
         </div>
         {/* progress */}
@@ -900,6 +969,7 @@ export default function TaxGuide() {
       { key: "j1-student", label: "J-1", labelKo: "교환학생" },
       { key: "h1b", label: "H-1B", labelKo: "취업비자" },
       { key: "l1", label: "L-1", labelKo: "주재원/파견" },
+      { key: "e2", label: "E-2", labelKo: "투자/사업비자" },
       { key: "dependent", label: "동반비자", labelKo: "J-2/F-2/H-4" },
       { key: "l2", label: "L-2", labelKo: "L-2 동반" },
     ];
@@ -1153,7 +1223,7 @@ export default function TaxGuide() {
               {[
                 { label: "신고 대상", value: "2025", sub: "2025 Tax Year 소득" },
                 { label: "기본 마감일", value: "4.15", sub: "2026년 4월 15일 (수)" },
-                { label: "비용", value: visaType === "h1b" || visaType === "l1" ? "$0–50" : "$0–35", sub: "도구 사용료" },
+                { label: "비용", value: visaType === "h1b" || visaType === "l1" || visaType === "e2" ? "$0–50" : "$0–35", sub: "도구 사용료" },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -1228,7 +1298,7 @@ export default function TaxGuide() {
               <p className="mb-4">본인 상황에 따라 제출하는 양식이 다릅니다:</p>
             </Prose>
             <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
-              {visaType === "h1b" || visaType === "l1" ? (
+              {visaType === "h1b" || visaType === "l1" || visaType === "e2" ? (
                 <>
                   <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
                     <div className="flex items-baseline gap-3 mb-1">
@@ -1253,6 +1323,13 @@ export default function TaxGuide() {
                       <T tip={`First-Year Choice — ${visa.label} 첫 해에 일부 기간만 체류한 경우, 도착일부터 RA로 취급해달라고 선택할 수 있는 제도.`}>First-Year Choice Election</T>으로 1040 사용 가능
                     </p>
                   </div>
+                  {visaType === "e2" && (
+                    <Callout type="info" label="E-2 사업형태별 추가 양식">
+                      사업 형태에 따라 추가 양식이 필요할 수 있습니다: 개인사업은 <Code>Schedule C</Code> + <Code>Schedule SE</Code>,
+                      외국인 소유 1인 LLC는 <Code>Form 5472</Code> + pro forma <Code>Form 1120</Code>이 필수입니다.
+                      자세한 내용은 <strong>Step 4 (연방세)</strong>에서 확인하세요.
+                    </Callout>
+                  )}
                 </>
               ) : visaType === "dependent" || visaType === "l2" ? (
                 <>
@@ -1356,7 +1433,7 @@ export default function TaxGuide() {
             <SectionLabel>도착 연도 선택</SectionLabel>
             <Prose>
               <p className="mb-3">
-                {visaType === "h1b" || visaType === "l1"
+                {visaType === "h1b" || visaType === "l1" || visaType === "e2"
                   ? "RA/NRA 판단 및 세금 가이드 계산에 사용됩니다."
                   : "조세조약 면세 기간 계산에 사용됩니다."}
               </p>
@@ -1420,8 +1497,9 @@ export default function TaxGuide() {
     const exemptYears = visa.sptExemptYears;
     const isH1B = visaType === "h1b";
     const isL1 = visaType === "l1";
+    const isE2 = visaType === "e2";
     const isL2 = visaType === "l2";
-    const isH1BLike = isH1B || isL1;
+    const isH1BLike = isH1B || isL1 || isE2;
     const isDependent = visaType === "dependent";
     const isDependentLike = isDependent || isL2;
     const isStudent = visaType === "f1-student" || visaType === "j1-student";
@@ -1641,6 +1719,12 @@ export default function TaxGuide() {
                 L-1은 F/J와 달리 <T tip="Substantial Presence Test — 183일 기준 거주자 판정 테스트. L비자는 면제 기간이 없어 모든 체류일이 카운트됩니다.">SPT</T> 면제가 없으므로 도착 첫 해부터 빠르게 RA가 됩니다.
               </Callout>
             )}
+            {isE2 && (
+              <Callout type="info" label="E-2 투자비자 참고">
+                E-2 비자는 SPT 면제가 없으므로 입국 첫해에도 183일 이상 체류하면 바로 RA(거주자)가 됩니다.
+                입국 첫해에 183일 미만 체류한 경우에만 NRA(비거주자)이며, 이 경우 <T tip="Dual-Status — 같은 해에 NRA+RA 양쪽 신분이 모두 적용되는 경우. 입국일 이전은 NRA, 이후는 RA로 처리됩니다.">Dual-Status</T> 신고가 필요할 수 있습니다.
+              </Callout>
+            )}
             <Prose>
               <p>
                 {visa.label} 첫 해에 중간부터 체류하여 183일 미만인 경우, 해당 연도는 NRA로 분류됩니다. 이 경우 두 가지 선택이 있습니다:
@@ -1837,8 +1921,9 @@ export default function TaxGuide() {
     const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
     const isL1 = visaType === "l1";
+    const isE2 = visaType === "e2";
     const isL2 = visaType === "l2";
-    const isH1BLike = isH1B || isL1;
+    const isH1BLike = isH1B || isL1 || isE2;
     const isDependent = visaType === "dependent";
     const isDependentLike = isDependent || isL2;
     const isJ1Researcher = visaType === "j1-researcher";
@@ -2111,6 +2196,59 @@ export default function TaxGuide() {
                   <br /><br />
                   적용증명서는 파견 전 또는 파견 초기에 <strong>국민연금공단 국제협력팀</strong>에 신청합니다.
                 </Callout>
+              </>
+            ) : isE2 ? (
+              <>
+                <Prose>
+                  <p>
+                    E-2 소지자에게는 일반적인 조세조약 면세 혜택이 없습니다. H-1B와 달리 교수/연구직 조항(Article 20)도 적용되지 않습니다.
+                  </p>
+                </Prose>
+
+                <div
+                  className="my-8 py-8 px-6 text-center"
+                  style={{
+                    background: "var(--ink)",
+                    color: "var(--paper)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "var(--ink-faint)" }}>
+                    조세조약 혜택
+                  </p>
+                  <p className="font-[family-name:var(--font-serif)] text-[clamp(18px,3vw,28px)] font-black leading-tight">
+                    일반적인 면세 혜택 없음
+                  </p>
+                  <p className="text-[13px] mt-3" style={{ color: "var(--ink-faint)" }}>
+                    E-2 투자/사업비자에 적용되는 별도의 조세조약 면세 조항이 없습니다
+                  </p>
+                </div>
+
+                <Callout type="info" label="E-2 RA — Standard Deduction">
+                  E-2로 RA인 경우, 미국 시민과 동일하게 <strong><T tip="Standard Deduction — 과세소득에서 자동 차감되는 기본 공제액. 별도 증빙 없이 적용됩니다.">Standard Deduction</T>($15,700, 2025 기준 Single)</strong>을 적용받습니다.
+                  <br /><br />
+                  또한 RA는 <strong><T tip="Worldwide Income — 미국뿐 아니라 전 세계에서 발생한 모든 소득. 한국 급여, 이자, 배당, 임대소득 등을 모두 포함합니다.">전 세계 소득(Worldwide Income)</T></strong>에 대해 과세됩니다. 한국의 소득이 있다면 함께 신고해야 합니다.
+                  단, <T tip="Foreign Tax Credit — 외국에서 납부한 세금을 미국 세금에서 공제받는 제도. 이중과세를 방지합니다.">Foreign Tax Credit</T>으로 이중과세를 방지할 수 있습니다.
+                </Callout>
+
+              {isE2 && (
+                <>
+                  <SectionLabel>E-2 FICA / Self-Employment Tax</SectionLabel>
+                  <Prose>
+                    <p>
+                      E-2 비자 소지자가 <strong>직원(employee)</strong>으로 급여를 받는 경우 일반적인 <T tip="Federal Insurance Contributions Act — Social Security(6.2%) + Medicare(1.45%) = 7.65%. 고용주도 동일 금액을 부담합니다.">FICA</T>가 적용됩니다 (고용주와 각각 7.65%).
+                    </p>
+                    <p className="mt-3">
+                      <strong>자영업(Self-Employed)</strong>인 경우 — RA라면 <T tip="Self-Employment Tax — 자영업자가 Social Security(12.4%) + Medicare(2.9%) = 15.3%를 본인이 전액 부담하는 세금. Schedule SE로 계산합니다.">Self-Employment Tax</T> (15.3%)가 적용되며,
+                      <Code>Schedule SE</Code>로 계산합니다. NRA라면 원칙적으로 SE Tax가 면제됩니다.
+                    </p>
+                    <p className="mt-3">
+                      한국 본사에서 파견된 경우, 한미 <T tip="Totalization Agreement — 한미 사회보장협정. 파견 근무자가 양국에 이중으로 사회보장세를 내지 않도록 하는 협정입니다.">사회보장협정(Totalization Agreement)</T>에 따라
+                      한국에서 적용증명서를 발급받으면 미국 FICA가 면제될 수 있습니다.
+                    </p>
+                  </Prose>
+                </>
+              )}
               </>
             ) : (
               <>
@@ -2509,8 +2647,9 @@ export default function TaxGuide() {
     const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
     const isL1 = visaType === "l1";
+    const isE2 = visaType === "e2";
     const isL2 = visaType === "l2";
-    const isH1BLike = isH1B || isL1;
+    const isH1BLike = isH1B || isL1 || isE2;
     const isDependent = visaType === "dependent";
     const isDependentLike = isDependent || isL2;
     const isF1 = visaType === "f1-student";
@@ -2993,6 +3132,60 @@ export default function TaxGuide() {
                 한국에 계좌가 있는 L-1 주재원은 <strong>도착 첫 해부터</strong> 이 보고 의무를 확인하세요.
               </Callout>
             )}
+
+        {isE2 && (
+          <>
+            <SectionLabel>E-2 사업형태별 신고 가이드</SectionLabel>
+            <Prose>
+              <p className="mb-4">E-2 비자 소지자는 사업 형태에 따라 제출하는 양식이 크게 달라집니다:</p>
+            </Prose>
+            <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+              <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>1</span>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>개인사업 (Sole Proprietor)</span>
+                </div>
+                <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+                  <Code>Form 1040</Code> + <Code>Schedule C</Code> (사업 수입·지출) + <Code>Schedule SE</Code> (자영업세 계산)
+                </p>
+              </div>
+              <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>2</span>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>다인 LLC / 파트너십</span>
+                </div>
+                <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+                  법인: <Code>Form 1065</Code> (파트너십 신고서) → 오너: <Code>Schedule K-1</Code>으로 개인 소득 반영
+                </p>
+              </div>
+              <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>3</span>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>C-Corporation</span>
+                </div>
+                <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+                  법인세: <Code>Form 1120</Code> 별도 신고 — 오너는 급여(W-2) 및 배당(1099-DIV)으로 개인소득세 신고
+                </p>
+              </div>
+              <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--ink-muted)" }}>4</span>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>S-Corporation ⚠️</span>
+                </div>
+                <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+                  <strong>NRA 또는 Dual-Status인 해에는 S-Corp 주주 자격이 없습니다</strong> — <Code>Form 2553</Code> 선택 전 반드시 RA 여부를 확인하세요
+                </p>
+              </div>
+            </div>
+
+            <Callout type="warn" label="Form 5472 — $25,000 페널티 주의">
+              외국인(NRA 또는 외국 법인)이 25% 이상 소유한 미국 법인, 또는 외국인이 단독 소유한 <T tip="Disregarded Entity — 세법상 법인이 아닌 1인 LLC. 소유자가 외국인이면 pro forma Form 1120과 Form 5472를 제출해야 합니다.">1인 LLC(Disregarded Entity)</T>는
+              매년 pro forma <Code>Form 1120</Code>과 <Code>Form 5472</Code>를 제출해야 합니다.
+              <br /><br />
+              <strong>미제출 시 건당 $25,000 페널티</strong>가 부과됩니다. E-2 비자로 LLC를 설립한 경우 반드시 확인하세요.
+            </Callout>
+          </>
+        )}
           </>
         )}
 
@@ -3106,12 +3299,14 @@ export default function TaxGuide() {
             ...(visaType === "j1-researcher" || visaType === "j1-student" ? ["DS-2019 정보 (프로그램 번호, 스폰서 기관)"] : []),
             ...(visaType === "dependent" || visaType === "l2" ? ["주비자 소지자의 비자 서류 정보"] : []),
             ...(visaType === "l1" ? ["I-797 승인 통지서 정보"] : []),
+            ...(visaType === "e2" ? ["E-2 비자 승인 서류", "사업자등록/LLC 서류 (EIN 확인서)"] : []),
             "I-94 기록 (입국일, 출국일)",
             "미국 입국/출국 날짜 — 연도별 정리 필요",
             isH1BLike ? "SSN (Social Security Number)" : "SSN (Social Security Number) 또는 ITIN",
             "W-2 (급여 소득, 원천징수 금액)",
             ...(!isH1BLike ? ["1042-S (조세조약 적용 소득, 해당 시)"] : []),
             ...(visaType === "l1" ? ["사회보장협정 적용증명서 (해당 시)"] : []),
+            ...(visaType === "e2" ? ["Schedule C 관련 자료 (해당 시)", "Form 5472 관련 자료 (해당 시)"] : []),
             "1099-INT / 1099-DIV / 1099-NEC (해당 시)",
           ].map((item, i) => (
             <li key={i} className="flex items-baseline gap-3">
@@ -3195,7 +3390,7 @@ export default function TaxGuide() {
         <ul className="space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
           {[
             "각 주마다 양식과 절차가 다름",
-            isResident || visaType === "h1b" || visaType === "l1"
+            isResident || visaType === "h1b" || visaType === "l1" || visaType === "e2"
               ? "TurboTax, H&R Block, FreeTaxUSA 등에서 주세도 함께 작성 가능"
               : "NRA: Sprintax 사용 추천 (자동으로 해당 주 양식 작성, ~$25-35)",
             "직접 작성 시: 거주 주의 Department of Revenue 웹사이트에서 양식 다운로드",
@@ -3215,15 +3410,15 @@ export default function TaxGuide() {
         ) : (
           <Callout type="info" label="조세조약 + 주세">
             대부분의 주에서 한미 조세조약의 면세 혜택이 주세에도 적용됩니다.
-            {visaType === "h1b" || visaType === "l1"
-              ? ` ${visaType === "l1" ? "L-1" : "H-1B"} RA의 경우 주세에서는 일반적인 Standard Deduction이 적용됩니다.`
+            {visaType === "h1b" || visaType === "l1" || visaType === "e2"
+              ? ` ${visaType === "l1" ? "L-1" : visaType === "e2" ? "E-2" : "H-1B"} RA의 경우 주세에서는 일반적인 Standard Deduction이 적용됩니다.`
               : " Sprintax를 사용하면 이를 자동으로 처리해 줍니다."}
           </Callout>
         )}
 
-        <SectionLabel>{isResident || visaType === "h1b" || visaType === "l1" ? "주세 신고 방법" : "Sprintax로 주세 신고하기"}</SectionLabel>
+        <SectionLabel>{isResident || visaType === "h1b" || visaType === "l1" || visaType === "e2" ? "주세 신고 방법" : "Sprintax로 주세 신고하기"}</SectionLabel>
         <div className="space-y-3">
-          {(isResident || visaType === "h1b" || visaType === "l1"
+          {(isResident || visaType === "h1b" || visaType === "l1" || visaType === "e2"
             ? [
                 "TurboTax, H&R Block, 또는 FreeTaxUSA에서 연방세와 함께 작성",
                 "주세 양식이 자동으로 생성됨",
@@ -3365,9 +3560,9 @@ export default function TaxGuide() {
           작성한 세금 서류, 어디로 어떻게 보내나
         </p>
 
-        {(visaType === "h1b" || visaType === "l1") && (
+        {(visaType === "h1b" || visaType === "l1" || visaType === "e2") && (
           <Callout type="tip" label="e-file 추천">
-            {visaType === "l1" ? "L-1" : "H-1B"} RA라면 TurboTax 또는 H&R Block에서 <strong>e-file</strong>로 바로 제출할 수 있습니다.
+            {visaType === "l1" ? "L-1" : visaType === "e2" ? "E-2" : "H-1B"} RA라면 TurboTax 또는 H&R Block에서 <strong>e-file</strong>로 바로 제출할 수 있습니다.
             우편 발송이 필요 없어 가장 빠르고 안전합니다.
           </Callout>
         )}
@@ -3431,7 +3626,7 @@ export default function TaxGuide() {
               연방세 &rarr; IRS
             </p>
             <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
-              {visaType === "h1b" || visaType === "l1" ? (
+              {visaType === "h1b" || visaType === "l1" || visaType === "e2" ? (
                 <>
                   <li><Code>1040</Code> (또는 <Code>1040-NR</Code>)</li>
                   <li>W-2 원본 첨부</li>
@@ -3454,7 +3649,7 @@ export default function TaxGuide() {
             <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
               <li>주 세금 양식 (주마다 다름)</li>
               <li>W-2 사본 첨부</li>
-              <li>주소: {visaType === "h1b" || visaType === "l1" ? "소프트웨어" : "Sprintax"} 가이드에 기재됨</li>
+              <li>주소: {visaType === "h1b" || visaType === "l1" || visaType === "e2" ? "소프트웨어" : "Sprintax"} 가이드에 기재됨</li>
               <li>연방세와 <strong>별도 봉투</strong>로 발송</li>
             </ul>
           </div>
@@ -3534,7 +3729,7 @@ export default function TaxGuide() {
         </div>
 
         <Callout type="tip" label="E-file">
-          {visaType === "h1b" || visaType === "l1"
+          {visaType === "h1b" || visaType === "l1" || visaType === "e2"
             ? "TurboTax 또는 H&R Block에서 e-file하면 우편 발송 없이 바로 제출됩니다. 24시간 내 접수 확인, 2~3주 내 환급 가능합니다."
             : <>Sprintax에서 연방세{" "}
               <T tip="e-file: 세금 서류를 온라인으로 전자 제출.">e-file</T>
@@ -3553,7 +3748,8 @@ export default function TaxGuide() {
     const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
     const isL1 = visaType === "l1";
-    const isH1BLike = isH1B || isL1;
+    const isE2 = visaType === "e2";
+    const isH1BLike = isH1B || isL1 || isE2;
 
     return (
       <>
@@ -3703,7 +3899,7 @@ export default function TaxGuide() {
               : isH1BLike
                 ? [
                     {
-                      mistake: `${isL1 ? "L-1" : "H-1B"} RA인데 NRA 소프트웨어(Sprintax)로 신고`,
+                      mistake: `${isL1 ? "L-1" : isE2 ? "E-2" : "H-1B"} RA인데 NRA 소프트웨어(Sprintax)로 신고`,
                       fix: "RA는 TurboTax, H&R Block 등 일반 소프트웨어 사용",
                     },
                     {
@@ -3712,7 +3908,7 @@ export default function TaxGuide() {
                     },
                     {
                       mistake: "FICA 환급 잘못 신청",
-                      fix: `${isL1 ? "L-1" : "H-1B"}는 FICA 면제 대상이 아닙니다 — 잘못 신청하면 문제 발생`,
+                      fix: `${isL1 ? "L-1" : isE2 ? "E-2" : "H-1B"}는 FICA 면제 대상이 아닙니다 — 잘못 신청하면 문제 발생`,
                     },
                     ...(isL1 ? [
                       {
@@ -3722,6 +3918,24 @@ export default function TaxGuide() {
                       {
                         mistake: "FBAR/Form 8938 미제출",
                         fix: "RA는 해외 금융계좌 합산 $10,000 초과 시 FBAR 필수 — 도착 첫 해부터 확인",
+                      },
+                    ] : []),
+                    ...(isE2 ? [
+                      {
+                        mistake: "Form 5472 미제출",
+                        fix: "외국인 소유 LLC는 매년 Form 5472 + pro forma 1120 제출 필수 — 미제출 시 $25,000 페널티",
+                      },
+                      {
+                        mistake: "S-Corp 자격 미확인",
+                        fix: "NRA 또는 Dual-Status 해에는 S-Corp 주주 자격이 없음 — Form 2553 선택 전 RA 여부 확인 필수",
+                      },
+                      {
+                        mistake: "Schedule C / SE Tax 누락",
+                        fix: "개인사업(Sole Proprietor) 소득은 Schedule C로 보고하고, RA라면 Schedule SE로 자영업세(15.3%)도 납부해야 합니다",
+                      },
+                      {
+                        mistake: "Dual-Status에서 Standard Deduction 적용 오류",
+                        fix: "Dual-Status 해에는 Standard Deduction을 사용할 수 없습니다 — Itemized Deduction만 가능",
                       },
                     ] : []),
                   ]

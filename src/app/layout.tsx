@@ -26,7 +26,7 @@ const jetbrains = JetBrains_Mono({
 const SITE_URL = "https://us-tax-lovat.vercel.app";
 const TITLE = "미국 세금 가이드 — 비자별·신분별 맞춤 세금 신고 안내서";
 const DESCRIPTION =
-  "한국인을 위한 미국 세금 신고 완벽 가이드. F-1 유학생, J-1 연구원/교환학생, H-1B 취업비자, L-1 주재원/파견, L-2 동반비자, 동반비자(F-2/J-2/H-4), 영주권자(Green Card), 시민권자 대상. SPT 거주자 판정부터 한미 조세조약, Totalization Agreement(사회보장협정), Form 1040/1040-NR, Form 8843, FBAR, FATCA, FTC/FEIE, Sprintax 사용법, 연방세·주세 신고, 환급 추적까지 8단계로 안내합니다.";
+  "한국인을 위한 미국 세금 신고 완벽 가이드. F-1 유학생, J-1 연구원/교환학생, H-1B 취업비자, L-1 주재원/파견, L-2 동반비자, E-2 투자/사업비자, 동반비자(F-2/J-2/H-4), 영주권자(Green Card), 시민권자 대상. SPT 거주자 판정부터 한미 조세조약, Totalization Agreement(사회보장협정), Form 1040/1040-NR, Form 8843, FBAR, FATCA, FTC/FEIE, Schedule C, Form 5472, Sprintax 사용법, 연방세·주세 신고, 환급 추적까지 8단계로 안내합니다.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -67,6 +67,10 @@ export const metadata: Metadata = {
     "L-1 세금",
     "L1 비자 세금 신고",
     "L-2 세금",
+    "E-2 세금",
+    "E2 비자 세금 신고",
+    "투자비자 세금",
+    "사업비자 세금",
     "주재원 세금 신고",
     "파견 세금",
     "사회보장협정",
@@ -90,6 +94,11 @@ export const metadata: Metadata = {
     "CPT tax",
     "FICA exemption",
     "tax treaty Korea",
+    "Schedule C",
+    "Form 5472",
+    "self-employment tax",
+    "E-2 visa tax",
+    "treaty investor tax",
   ],
   openGraph: {
     title: TITLE,
@@ -159,7 +168,7 @@ const jsonLdWebPage = {
   },
   audience: {
     "@type": "Audience",
-    audienceType: "한국인 미국 거주자, 유학생, 취업비자 소지자, 주재원/파견(L-1/L-2), 영주권자, 시민권자",
+    audienceType: "한국인 미국 거주자, 유학생, 취업비자 소지자, 주재원/파견(L-1/L-2), 투자/사업비자(E-2), 영주권자, 시민권자",
   },
   mainEntity: {
     "@type": "HowTo",
@@ -172,7 +181,7 @@ const jsonLdWebPage = {
         "@type": "HowToStep",
         position: 1,
         name: "시작하기",
-        text: "본인의 비자 유형(F-1, J-1, H-1B, L-1, L-2, 동반비자) 또는 신분(영주권자, 시민권자)을 선택합니다.",
+        text: "본인의 비자 유형(F-1, J-1, H-1B, L-1, L-2, E-2, 동반비자) 또는 신분(영주권자, 시민권자)을 선택합니다.",
       },
       {
         "@type": "HowToStep",

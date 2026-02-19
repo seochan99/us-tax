@@ -48,7 +48,7 @@ const STEPS = [
 "Track Refund"];
 
 
-type VisaType = "f1-student" | "j1-researcher" | "j1-student" | "h1b" | "l1" | "l2" | "dependent" | "green-card" | "citizen";
+type VisaType = "f1-student" | "j1-researcher" | "j1-student" | "h1b" | "l1" | "l2" | "e2" | "dependent" | "green-card" | "citizen";
 
 interface DocItem {
   id: string;
@@ -227,6 +227,30 @@ const VISA_CONFIGS: Record<VisaType, VisaConfig> = {
 
     form8233: false
   },
+  "e2": {
+    label: "E-2 Treaty Investor",
+    labelKo: "Treaty Investor",
+    desc: "Treaty investor operating or investing in a business in the United States on an E-2 visa",
+    sptExemptYears: 0,
+    treatyArticle: "",
+    treatyBenefit: "No general tax treaty exemption — there is no specific tax treaty exemption article for E-2 holders",
+    ficaExempt: false,
+    nraToolsOnly: false,
+    docs: [
+      { id: "passport", label: "Passport", desc: "Original valid passport" },
+      { id: "e2approval", label: "E-2 visa approval documents", desc: "E-2 visa petition approval documents and business plan" },
+      { id: "i94", label: "I-94 Arrival/Departure Record", desc: "Printed from i94.cbp.dhs.gov" },
+      { id: "entrydates", label: "U.S. entry/exit dates (by year)", desc: "Check arrival and departure dates by year through passport stamp or I-94 Travel History" },
+      { id: "ssn", label: "SSN (or ITIN)", desc: "Social Security Number. Can be replaced with ITIN (Form W-7) if unavailable" },
+      { id: "bizreg", label: "Business registration / LLC documents", desc: "LLC Articles of Organization, EIN confirmation letter, Operating Agreement, etc." },
+      { id: "w2", label: "W-2 (if applicable)", desc: "If receiving salary from your own company or another employer" },
+      { id: "1099misc", label: "1099 series (if applicable)", desc: "1099-NEC, 1099-MISC, 1099-INT, 1099-DIV, etc." },
+      { id: "schedulec", label: "Schedule C documents (if applicable)", desc: "Business income and expense records, receipts, bookkeeping — for sole proprietors" },
+      { id: "form5472", label: "Form 5472 documents (if applicable)", desc: "For foreign-owned LLCs — reportable transactions records" },
+      { id: "prev", label: "Copy of previous year's tax return", desc: "If you have previously reported" },
+    ],
+    form8233: false,
+  },
   "dependent": {
     label: "Dependent (J-2/F-2/H-4)",
     labelKo: "accompanying visa",
@@ -345,6 +369,8 @@ interface SearchEntry {
   keywords: string[];
 }
 
+type Language = "ko" | "en";
+
 const SEARCH_INDEX: SearchEntry[] = [
 { term: "SPT", termKo: "Substantial Retention Test", desc: "Substantial Presence Test — Determination of residency for 183 days", step: 1, keywords: ["substantial presence", "183 days", "Resident determination", "Number of days of stay"] },
 { term: "NRA", termKo: "non-resident alien", desc: "Non-Resident Alien — Non-resident for tax purposes", step: 1, keywords: ["non-resident alien", "non-resident", "foreigner"] },
@@ -396,7 +422,11 @@ const SEARCH_INDEX: SearchEntry[] = [
 { term: "IRS average annual exchange rate", termKo: "Average annual exchange rate", desc: "IRS official exchange rate used when converting Korean Won to US Dollars", step: 4, keywords: ["exchange rate", "exchange rate", "Average annual exchange rate", "won dollar", "currency"] },
 { term: "L-1 (expatriate/dispatch)", termKo: "expatriate visa", desc: "L-1 Visa — Intracompany Transferee, no SPT exemption", step: 0, keywords: ["l-1", "l1", "expatriate", "detachment", "intracompany", "transferee", "l-1a", "l-1b"] },
 { term: "L-2 (accompanying visa)", termKo: "L-2 companion visa", desc: "Visa for spouse/children of L-1 holder", step: 0, keywords: ["l-2", "l2", "l2 accompanying", "l-2 accompanying", "lVisa required"] },
-{ term: "Totalization Agreement", termKo: "Korea-US Social Security Agreement", desc: "Korea-US Social Security Agreement — L-1 expatriates may be exempted from FICA", step: 2, keywords: ["totalization", "social security agreement", "totalization agreement", "national pension", "fica exemption", "detachment"] }];
+{ term: "Totalization Agreement", termKo: "Korea-US Social Security Agreement", desc: "Korea-US Social Security Agreement — L-1 expatriates may be exempted from FICA", step: 2, keywords: ["totalization", "social security agreement", "totalization agreement", "national pension", "fica exemption", "detachment"] },
+  { term: "E-2 (Treaty Investor)", termKo: "Treaty Investor visa", desc: "E-2 visa — Treaty Investor, no SPT exemption", step: 0, keywords: ["e-2", "e2", "treaty investor", "investor visa", "business visa", "investment"] },
+  { term: "Schedule C (Business Income)", termKo: "Business income schedule", desc: "Schedule for reporting business income and expenses for sole proprietors", step: 4, keywords: ["schedule c", "business income", "sole proprietor", "self-employed", "business expenses"] },
+  { term: "Form 5472 (Foreign-Owned LLC)", termKo: "Foreign LLC reporting", desc: "Foreign-owned single-member LLC — pro forma 1120 + 5472 required, $25,000 penalty for non-filing", step: 4, keywords: ["5472", "form 5472", "foreign-owned llc", "disregarded entity", "$25,000", "penalty", "pro forma 1120"] },
+  { term: "Self-Employment Tax", termKo: "Self-employment tax", desc: "Self-employed Social Security + Medicare tax (Schedule SE)", step: 4, keywords: ["self-employment tax", "se tax", "schedule se", "social security", "medicare", "15.3%"] }];
 
 
 /* ================================================================
@@ -597,7 +627,13 @@ function Prose({ children }: {children: ReactNode;}) {
    MAIN COMPONENT
    ================================================================ */
 
-export default function TaxGuideEn() {
+export default function TaxGuideEn({
+  language,
+  onLanguageChange,
+}: {
+  language: Language;
+  onLanguageChange: (next: Language) => void;
+}) {
   const [step, setStep] = useState(() => loadFromLS(LS_KEYS.step, 0));
   const [checkedDocs, setCheckedDocs] = useState<Set<string>>(
     () => new Set(loadFromLS<string[]>(LS_KEYS.checkedDocs, []))
@@ -741,7 +777,7 @@ export default function TaxGuideEn() {
               </span>
             }
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setSearchOpen(true)}
               className="flex items-center gap-1.5 px-2 py-1 rounded transition-colors"
@@ -755,11 +791,44 @@ export default function TaxGuideEn() {
               <span className="hidden sm:inline font-[family-name:var(--font-mono)] text-[10px]" style={{ color: "var(--ink-faint)" }}>⌘K</span>
             </button>
             <span
-              className="font-[family-name:var(--font-mono)] text-[11px] tabular-nums"
+              className="hidden sm:inline font-[family-name:var(--font-mono)] text-[11px] tabular-nums"
               style={{ color: "var(--ink-faint)" }}>
               
               {String(step + 1).padStart(2, "0")}/{String(STEPS.length).padStart(2, "0")}
             </span>
+            <div
+              className="flex items-center rounded-md overflow-hidden"
+              style={{ border: "1px solid var(--rule)" }}
+              aria-label="Language selector">
+              
+              <button
+                onClick={() => onLanguageChange("ko")}
+                className="px-2 py-1 font-[family-name:var(--font-mono)] text-[10px] font-bold"
+                style={{
+                  border: "none",
+                  cursor: "pointer",
+                  color: language === "ko" ? "var(--paper)" : "var(--ink-faint)",
+                  background: language === "ko" ? "var(--ink)" : "transparent"
+                }}
+                aria-pressed={language === "ko"}>
+                
+                KO
+              </button>
+              <button
+                onClick={() => onLanguageChange("en")}
+                className="px-2 py-1 font-[family-name:var(--font-mono)] text-[10px] font-bold"
+                style={{
+                  border: "none",
+                  borderLeft: "1px solid var(--rule)",
+                  cursor: "pointer",
+                  color: language === "en" ? "var(--paper)" : "var(--ink-faint)",
+                  background: language === "en" ? "var(--ink)" : "transparent"
+                }}
+                aria-pressed={language === "en"}>
+                
+                EN
+              </button>
+            </div>
           </div>
         </div>
         {/* progress */}
@@ -900,6 +969,7 @@ export default function TaxGuideEn() {
     { key: "j1-student", label: "J-1", labelKo: "exchange student" },
     { key: "h1b", label: "H-1B", labelKo: "work visa" },
     { key: "l1", label: "L-1", labelKo: "Expatriate/Dispatch" },
+    { key: "e2", label: "E-2", labelKo: "Treaty Investor" },
     { key: "dependent", label: "accompanying visa", labelKo: "J-2/F-2/H-4" },
     { key: "l2", label: "L-2", labelKo: "Accompanied by L-2" }];
 
@@ -1155,7 +1225,7 @@ export default function TaxGuideEn() {
               {[
               { label: "Tax year", value: "2025", sub: "Income earned in 2025" },
               { label: "Deadline", value: "4.15", sub: "Wednesday, April 15, 2026" },
-              { label: "Estimated cost", value: visaType === "h1b" || visaType === "l1" ? "$0–50" : "$0–35", sub: "Software fee" }].
+              { label: "Estimated cost", value: visaType === "h1b" || visaType === "l1" || visaType === "e2" ? "$0–50" : "$0–35", sub: "Software fee" }].
               map((item) =>
               <div
                 key={item.label}
@@ -1230,7 +1300,7 @@ export default function TaxGuideEn() {
               <p className="mb-4">The form you submit will vary depending on your situation:</p>
             </Prose>
             <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
-              {visaType === "h1b" || visaType === "l1" ?
+              {visaType === "h1b" || visaType === "l1" || visaType === "e2" ?
               <>
                   <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
                     <div className="flex items-baseline gap-3 mb-1">
@@ -1255,6 +1325,13 @@ export default function TaxGuideEn() {
                       <T tip={`First-Year Choice — ${visa.label} If you stay for only part of the first year, you can choose to be treated as an RA from the date of arrival.`}>First-Year Choice Election</T>1040 available as
                     </p>
                   </div>
+                  {visaType === "e2" && (
+                    <Callout type="info" label="E-2 Additional Forms by Business Type">
+                      Depending on your business structure, additional forms may be required: sole proprietors need <Code>Schedule C</Code> + <Code>Schedule SE</Code>,
+                      and foreign-owned single-member LLCs must file <Code>Form 5472</Code> + pro forma <Code>Form 1120</Code>.
+                      See <strong>Step 4 (Federal Tax)</strong> for details.
+                    </Callout>
+                  )}
                 </> :
               visaType === "dependent" || visaType === "l2" ?
               <>
@@ -1358,7 +1435,7 @@ export default function TaxGuideEn() {
             <SectionLabel>Select year of arrival</SectionLabel>
             <Prose>
               <p className="mb-3">
-                {visaType === "h1b" || visaType === "l1" ?
+                {visaType === "h1b" || visaType === "l1" || visaType === "e2" ?
                 "Used for RA/NRA determinations and tax guide calculations." :
                 "Used in calculating tax treaty exemption periods."}
               </p>
@@ -1422,8 +1499,9 @@ export default function TaxGuideEn() {
     const exemptYears = visa.sptExemptYears;
     const isH1B = visaType === "h1b";
     const isL1 = visaType === "l1";
+    const isE2 = visaType === "e2";
     const isL2 = visaType === "l2";
-    const isH1BLike = isH1B || isL1;
+    const isH1BLike = isH1B || isL1 || isE2;
     const isDependent = visaType === "dependent";
     const isDependentLike = isDependent || isL2;
     const isStudent = visaType === "f1-student" || visaType === "j1-student";
@@ -1686,6 +1764,12 @@ export default function TaxGuideEn() {
                 A certificate of application must be applied to the International Cooperation Team of the National Pension Service before or at the beginning of dispatch.
               </Callout>
           }
+            {isE2 && (
+              <Callout type="info" label="E-2 Treaty Investor Note">
+                E-2 visa holders have no SPT exemption, so if you stay 183 days or more in your first year, you become a Resident Alien (RA) immediately.
+                If you stayed less than 183 days in your first year, you are an NRA and may need to file a <T tip="Dual-Status — When both NRA and RA status apply in the same year. The period before arrival is treated as NRA, and after as RA.">Dual-Status</T> return.
+              </Callout>
+            )}
           </> :
         isDependentLike ?
         <>
@@ -1839,8 +1923,9 @@ export default function TaxGuideEn() {
     const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
     const isL1 = visaType === "l1";
+    const isE2 = visaType === "e2";
     const isL2 = visaType === "l2";
-    const isH1BLike = isH1B || isL1;
+    const isH1BLike = isH1B || isL1 || isE2;
     const isDependent = visaType === "dependent";
     const isDependentLike = isDependent || isL2;
     const isJ1Researcher = visaType === "j1-researcher";
@@ -2113,6 +2198,27 @@ export default function TaxGuideEn() {
                   <br /><br />
                   Certificate of application must be submitted before dispatch or at the beginning of dispatch. <strong>National Pension Service International Cooperation Team</strong>Apply to.
                 </Callout>
+              </> :
+            isE2 ?
+              <>
+              {isE2 && (
+                <>
+                  <SectionLabel>E-2 FICA / Self-Employment Tax</SectionLabel>
+                  <Prose>
+                    <p>
+                      If you receive wages as an <strong>employee</strong>, standard <T tip="Federal Insurance Contributions Act — Social Security (6.2%) + Medicare (1.45%) = 7.65%. The employer pays the same amount.">FICA</T> applies (7.65% each for employer and employee).
+                    </p>
+                    <p className="mt-3">
+                      If <strong>self-employed</strong> — as an RA, <T tip="Self-Employment Tax — Self-employed individuals pay Social Security (12.4%) + Medicare (2.9%) = 15.3% themselves. Calculated using Schedule SE.">Self-Employment Tax</T> (15.3%) applies,
+                      calculated via <Code>Schedule SE</Code>. As an NRA, SE Tax is generally exempt.
+                    </p>
+                    <p className="mt-3">
+                      If dispatched from a Korean parent company, the Korea-US <T tip="Totalization Agreement — A bilateral social security agreement that prevents double payment of social security taxes for dispatched workers.">Totalization Agreement</T> may
+                      exempt you from US FICA if you obtain a Certificate of Coverage from Korea.
+                    </p>
+                  </Prose>
+                </>
+              )}
               </> :
 
           <>
@@ -2511,8 +2617,9 @@ export default function TaxGuideEn() {
     const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
     const isL1 = visaType === "l1";
+    const isE2 = visaType === "e2";
     const isL2 = visaType === "l2";
-    const isH1BLike = isH1B || isL1;
+    const isH1BLike = isH1B || isL1 || isE2;
     const isDependent = visaType === "dependent";
     const isDependentLike = isDependent || isL2;
     const isF1 = visaType === "f1-student";
@@ -2998,6 +3105,60 @@ export default function TaxGuideEn() {
           </>
         }
 
+        {isE2 && (
+          <>
+            <SectionLabel>E-2 Filing Guide by Business Type</SectionLabel>
+            <Prose>
+              <p className="mb-4">E-2 visa holders file different forms depending on business structure:</p>
+            </Prose>
+            <div className="space-y-0" style={{ borderTop: "1px solid var(--rule-light)" }}>
+              <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>1</span>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>Sole Proprietor</span>
+                </div>
+                <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+                  <Code>Form 1040</Code> + <Code>Schedule C</Code> (business income/expenses) + <Code>Schedule SE</Code> (self-employment tax)
+                </p>
+              </div>
+              <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>2</span>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>Multi-Member LLC / Partnership</span>
+                </div>
+                <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+                  Entity: <Code>Form 1065</Code> (partnership return) → Owner: <Code>Schedule K-1</Code> for individual income
+                </p>
+              </div>
+              <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--accent)" }}>3</span>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>C-Corporation</span>
+                </div>
+                <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+                  Corporate tax: <Code>Form 1120</Code> filed separately — owner reports salary (W-2) and dividends (1099-DIV) on personal return
+                </p>
+              </div>
+              <div className="py-4" style={{ borderBottom: "1px solid var(--rule-light)" }}>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="font-[family-name:var(--font-mono)] text-[12px] font-bold" style={{ color: "var(--ink-muted)" }}>4</span>
+                  <span className="text-[14px] font-medium" style={{ color: "var(--ink)" }}>S-Corporation ⚠️</span>
+                </div>
+                <p className="text-[13px] ml-[60px]" style={{ color: "var(--ink-muted)" }}>
+                  <strong>NRA or Dual-Status individuals cannot be S-Corp shareholders</strong> — verify RA status before electing S-Corp via <Code>Form 2553</Code>
+                </p>
+              </div>
+            </div>
+
+            <Callout type="warn" label="Form 5472 — $25,000 Penalty Warning">
+              A US corporation that is 25%+ owned by a foreign person, or a <T tip="Disregarded Entity — A single-member LLC that is not treated as a separate entity for tax purposes. If the owner is a foreign person, pro forma Form 1120 and Form 5472 must be filed.">single-member LLC (Disregarded Entity)</T> owned by a foreign person,
+              must file pro forma <Code>Form 1120</Code> and <Code>Form 5472</Code> annually.
+              <br /><br />
+              <strong>Penalty for non-filing is $25,000 per form.</strong> If you established an LLC on an E-2 visa, make sure to check this requirement.
+            </Callout>
+          </>
+        )}
+
         {/* Tools section */}
         <SectionLabel>{isH1BLike ? "02" : "03"} — Authoring tools</SectionLabel>
 
@@ -3108,6 +3269,7 @@ export default function TaxGuideEn() {
           ...(visaType === "j1-researcher" || visaType === "j1-student" ? ["DS-2019 information (program number, sponsoring organization)"] : []),
           ...(visaType === "dependent" || visaType === "l2" ? ["Visa document information for primary visa holders"] : []),
           ...(visaType === "l1" ? ["I-797 Approval Notice Information"] : []),
+          ...(visaType === "e2" ? ["E-2 visa approval documents", "Business registration / LLC documents (EIN confirmation)"] : []),
           "I-94 record (date of entry, date of departure)",
           "U.S. entry/exit dates — need to organize by year",
           isH1BLike ? "SSN (Social Security Number)" : "Social Security Number (SSN) or ITIN",
@@ -3197,7 +3359,7 @@ export default function TaxGuideEn() {
         <ul className="space-y-2 text-[14px]" style={{ color: "var(--ink-light)" }}>
           {[
           "Each state has different forms and procedures.",
-          isResident || visaType === "h1b" || visaType === "l1" ?
+          isResident || visaType === "h1b" || visaType === "l1" || visaType === "e2" ?
           "State taxes can also be prepared at TurboTax, H&R Block, FreeTaxUSA, etc." :
           "NRA: Recommend using Sprintax (automatically fills out applicable state forms, ~$25-35)",
           "If filling out in person: Download the form from your state's Department of Revenue website",
@@ -3217,15 +3379,15 @@ export default function TaxGuideEn() {
 
         <Callout type="info" label="Tax treaty + liquor tax">
             In most states, the tax exemption benefits of the US-Korea Tax Treaty also apply to state taxes.
-            {visaType === "h1b" || visaType === "l1" ?
-          ` ${visaType === "l1" ? "L-1" : "H-1B"} For RA, standard deduction applies to state taxes.` :
+            {visaType === "h1b" || visaType === "l1" || visaType === "e2" ?
+          ` ${visaType === "l1" ? "L-1" : visaType === "e2" ? "E-2" : "H-1B"} For RA, standard deduction applies to state taxes.` :
           " Sprintax takes care of this for you."}
           </Callout>
         }
 
-        <SectionLabel>{isResident || visaType === "h1b" || visaType === "l1" ? "How to report state taxes" : "File your state taxes with Sprintax"}</SectionLabel>
+        <SectionLabel>{isResident || visaType === "h1b" || visaType === "l1" || visaType === "e2" ? "How to report state taxes" : "File your state taxes with Sprintax"}</SectionLabel>
         <div className="space-y-3">
-          {(isResident || visaType === "h1b" || visaType === "l1" ?
+          {(isResident || visaType === "h1b" || visaType === "l1" || visaType === "e2" ?
           [
           "Complete with federal taxes from TurboTax, H&R Block, or FreeTaxUSA",
           "State tax forms are automatically generated",
@@ -3367,9 +3529,9 @@ export default function TaxGuideEn() {
           Where and how do I send the completed tax documents?
         </p>
 
-        {(visaType === "h1b" || visaType === "l1") &&
+        {(visaType === "h1b" || visaType === "l1" || visaType === "e2") &&
         <Callout type="tip" label="e-file recommendation">
-            {visaType === "l1" ? "L-1" : "H-1B"} If you're an RA, go to TurboTax or H&R Block. <strong>e-file</strong>You can submit it right away. It is the fastest and safest because it does not require mailing.
+            {visaType === "l1" ? "L-1" : visaType === "e2" ? "E-2" : "H-1B"} If you're an RA, go to TurboTax or H&R Block. <strong>e-file</strong>You can submit it right away. It is the fastest and safest because it does not require mailing.
           
         </Callout>
         }
@@ -3433,7 +3595,7 @@ export default function TaxGuideEn() {
               Federal Tax → IRS
             </p>
             <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
-              {visaType === "h1b" || visaType === "l1" ?
+              {visaType === "h1b" || visaType === "l1" || visaType === "e2" ?
               <>
                   <li><Code>1040</Code> (or <Code>1040-NR</Code>)</li>
                   <li>Attach original W-2</li>
@@ -3456,7 +3618,7 @@ export default function TaxGuideEn() {
             <ul className="space-y-1.5 text-[13px]" style={{ color: "var(--ink-muted)" }}>
               <li>State tax forms (varies by state)</li>
               <li>Attach copy of W-2</li>
-              <li>address: {visaType === "h1b" || visaType === "l1" ? "software" : "Sprintax"} Listed in the guide</li>
+              <li>address: {visaType === "h1b" || visaType === "l1" || visaType === "e2" ? "software" : "Sprintax"} Listed in the guide</li>
               <li>federal taxes and <strong>separate envelope</strong>Ship to</li>
             </ul>
           </div>
@@ -3536,7 +3698,7 @@ export default function TaxGuideEn() {
         </div>
 
         <Callout type="tip" label="E-file">
-          {visaType === "h1b" || visaType === "l1" ?
+          {visaType === "h1b" || visaType === "l1" || visaType === "e2" ?
           "If you e-file with TurboTax or H&R Block, it will be submitted immediately without mailing. Receipt will be confirmed within 24 hours, and refund will be possible within 2-3 weeks." :
           <>Federal Tax at Sprintax{" "}
               <T tip="e-file: Electronically file your tax documents online.">e-file</T>
@@ -3555,7 +3717,8 @@ export default function TaxGuideEn() {
     const isResident = visaType === "green-card" || visaType === "citizen";
     const isH1B = visaType === "h1b";
     const isL1 = visaType === "l1";
-    const isH1BLike = isH1B || isL1;
+    const isE2 = visaType === "e2";
+    const isH1BLike = isH1B || isL1 || isE2;
 
     return (
       <>
@@ -3705,7 +3868,7 @@ export default function TaxGuideEn() {
           isH1BLike ?
           [
           {
-            mistake: `${isL1 ? "L-1" : "H-1B"} It is an RA and reported using NRA software (Sprintax)`,
+            mistake: `${isL1 ? "L-1" : isE2 ? "E-2" : "H-1B"} It is an RA and reported using NRA software (Sprintax)`,
             fix: "RA uses general software such as TurboTax and H&R Block"
           },
           {
@@ -3714,7 +3877,7 @@ export default function TaxGuideEn() {
           },
           {
             mistake: "FICA refund incorrectly applied for",
-            fix: `${isL1 ? "L-1" : "H-1B"}Are not exempt from FICA — applying incorrectly can cause problems`
+            fix: `${isL1 ? "L-1" : isE2 ? "E-2" : "H-1B"}Are not exempt from FICA — applying incorrectly can cause problems`
           },
           ...(isL1 ? [
           {
@@ -3724,6 +3887,24 @@ export default function TaxGuideEn() {
           {
             mistake: "FBAR/Form 8938 not submitted",
             fix: "FBAR is required for RA if the combined foreign financial accounts exceed $10,000 — confirmed from the first year of arrival."
+          }] :
+          []),
+          ...(isE2 ? [
+          {
+            mistake: "Form 5472 not filed",
+            fix: "Foreign-owned LLCs must file Form 5472 + pro forma 1120 annually — $25,000 penalty for non-filing"
+          },
+          {
+            mistake: "S-Corp eligibility not verified",
+            fix: "NRA or Dual-Status individuals cannot be S-Corp shareholders — verify RA status before Form 2553 election"
+          },
+          {
+            mistake: "Schedule C / SE Tax omission",
+            fix: "Sole proprietor income must be reported on Schedule C, and RAs must also pay self-employment tax (15.3%) via Schedule SE"
+          },
+          {
+            mistake: "Standard Deduction error in Dual-Status year",
+            fix: "Standard Deduction cannot be used in a Dual-Status year — only Itemized Deduction is allowed"
           }] :
           [])] :
 
